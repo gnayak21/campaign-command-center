@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Campaign Command Center</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Workspace navigation">
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">C</div>
+          <div>
+            <strong>Command</strong>
+            <span>Campaign OS</span>
+          </div>
+        </div>
+
+        <nav class="nav-stack">
+          <button class="nav-item active" title="Command center" aria-label="Command center">
+            <span aria-hidden="true">⌂</span>
+            <span>Center</span>
+          </button>
+          <button class="nav-item" title="Audiences" aria-label="Audiences">
+            <span aria-hidden="true">◉</span>
+            <span>Audiences</span>
+          </button>
+          <button class="nav-item" title="Creative library" aria-label="Creative library">
+            <span aria-hidden="true">▧</span>
+            <span>Creative</span>
+          </button>
+          <button class="nav-item" title="Approvals" aria-label="Approvals">
+            <span aria-hidden="true">✓</span>
+            <span>Approvals</span>
+          </button>
+          <button class="nav-item" title="Reporting" aria-label="Reporting">
+            <span aria-hidden="true">↗</span>
+            <span>Reporting</span>
+          </button>
+        </nav>
+
+        <div class="connected-panel">
+          <span class="panel-label">Connected Properties</span>
+          <div class="property-row"><span class="dot google"></span>Google Ads <strong>Ready</strong></div>
+          <div class="property-row"><span class="dot tiktok"></span>TikTok Ads <strong>Review</strong></div>
+          <div class="property-row"><span class="dot snap"></span>Snap Ads <strong>Ready</strong></div>
+          <div class="property-row"><span class="dot meta"></span>Meta Ads <strong>Draft</strong></div>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Campaign Command Center</p>
+            <h1>Spring Product Launch</h1>
+          </div>
+          <div class="topbar-actions">
+            <button class="icon-button" title="Notifications" aria-label="Notifications">○</button>
+            <button class="secondary-button">Save Draft</button>
+            <button class="primary-button" id="launchButton">Launch Review</button>
+          </div>
+        </header>
+
+        <section class="status-strip" aria-label="Campaign status">
+          <div>
+            <span>Budget</span>
+            <strong id="budgetReadout">$185k</strong>
+          </div>
+          <div>
+            <span>Flight</span>
+            <strong>May 20 - Jun 30</strong>
+          </div>
+          <div>
+            <span>Launch Readiness</span>
+            <strong id="readinessReadout">82%</strong>
+          </div>
+          <div>
+            <span>Primary KPI</span>
+            <strong id="kpiReadout">ROAS 3.8x</strong>
+          </div>
+        </section>
+
+        <div class="command-grid">
+          <section class="brief-panel" aria-labelledby="briefTitle">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">01 Brief</p>
+                <h2 id="briefTitle">Campaign Inputs</h2>
+              </div>
+              <button class="icon-button" title="Import brief" aria-label="Import brief">⇪</button>
+            </div>
+
+            <label class="field-label" for="objective">Objective</label>
+            <select id="objective">
+              <option value="revenue">Revenue Growth</option>
+              <option value="awareness">Brand Awareness</option>
+              <option value="retention">Customer Retention</option>
+              <option value="launch">New Product Launch</option>
+            </select>
+
+            <label class="field-label" for="audience">Audience</label>
+            <input id="audience" value="Urban millennials, premium skincare buyers" />
+
+            <label class="field-label" for="budget">Total Budget</label>
+            <input id="budget" type="range" min="40000" max="400000" step="5000" value="185000" />
+
+            <div class="split-fields">
+              <div>
+                <label class="field-label" for="region">Region</label>
+                <select id="region">
+                  <option>United States</option>
+                  <option>North America</option>
+                  <option>United Kingdom</option>
+                  <option>Global</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label" for="tone">Tone</label>
+                <select id="tone">
+                  <option>Confident</option>
+                  <option>Editorial</option>
+                  <option>Playful</option>
+                  <option>Clinical</option>
+                </select>
+              </div>
+            </div>
+
+            <fieldset class="channel-toggles">
+              <legend>Active Channels</legend>
+              <label><input type="checkbox" data-channel="google" checked /> Google</label>
+              <label><input type="checkbox" data-channel="tiktok" checked /> TikTok</label>
+              <label><input type="checkbox" data-channel="snap" checked /> Snap</label>
+              <label><input type="checkbox" data-channel="meta" checked /> Meta</label>
+            </fieldset>
+
+            <button class="primary-button full-width" id="generateButton">Generate Plan</button>
+          </section>
+
+          <section class="plan-panel" aria-labelledby="planTitle">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">02 Strategy</p>
+                <h2 id="planTitle">AI Channel Plan</h2>
+              </div>
+              <div class="plan-score">
+                <span>Fit</span>
+                <strong id="fitScore">94</strong>
+              </div>
+            </div>
+
+            <div class="budget-mix" id="budgetMix" aria-label="Budget mix chart"></div>
+
+            <div class="recommendation-list" id="recommendations"></div>
+          </section>
+
+          <section class="launch-panel" aria-labelledby="launchTitle">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">03 Launch</p>
+                <h2 id="launchTitle">Property Readiness</h2>
+              </div>
+              <button class="icon-button" title="Sync platforms" aria-label="Sync platforms">↻</button>
+            </div>
+
+            <div class="property-cards" id="propertyCards"></div>
+          </section>
+
+          <section class="creative-panel" aria-labelledby="creativeTitle">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">04 Creative</p>
+                <h2 id="creativeTitle">Channel Variants</h2>
+              </div>
+              <button class="secondary-button">Send to Review</button>
+            </div>
+
+            <div class="creative-grid" id="creativeGrid"></div>
+          </section>
+
+          <section class="timeline-panel" aria-labelledby="timelineTitle">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">05 Operations</p>
+                <h2 id="timelineTitle">Launch Timeline</h2>
+              </div>
+              <span class="badge">6 tasks</span>
+            </div>
+
+            <ol class="timeline">
+              <li class="done"><span></span><div><strong>Brief locked</strong><small>Inputs approved by brand team</small></div></li>
+              <li class="done"><span></span><div><strong>Media mix modeled</strong><small>Scenario A selected</small></div></li>
+              <li class="current"><span></span><div><strong>Creative QA</strong><small>2 TikTok variants need policy pass</small></div></li>
+              <li><span></span><div><strong>Platform upload</strong><small>Scheduled for May 13</small></div></li>
+              <li><span></span><div><strong>Stakeholder approval</strong><small>CMO and growth lead</small></div></li>
+              <li><span></span><div><strong>Launch monitor</strong><small>First 24-hour pacing check</small></div></li>
+            </ol>
+          </section>
+
+          <section class="performance-panel" aria-labelledby="performanceTitle">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">06 Forecast</p>
+                <h2 id="performanceTitle">Performance Outlook</h2>
+              </div>
+              <button class="icon-button" title="Refresh forecast" aria-label="Refresh forecast">↺</button>
+            </div>
+
+            <div class="metric-grid">
+              <div><span>Projected Reach</span><strong id="reachMetric">8.4M</strong></div>
+              <div><span>CPA Target</span><strong id="cpaMetric">$31</strong></div>
+              <div><span>Conv. Lift</span><strong id="liftMetric">18%</strong></div>
+            </div>
+            <div class="forecast-chart" aria-label="Performance forecast chart">
+              <span style="height: 38%"></span>
+              <span style="height: 48%"></span>
+              <span style="height: 56%"></span>
+              <span style="height: 64%"></span>
+              <span style="height: 71%"></span>
+              <span style="height: 83%"></span>
+              <span style="height: 76%"></span>
+              <span style="height: 88%"></span>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
