@@ -110,10 +110,6 @@ button {
   color: #ffffff;
 }
 
-.connected-panel {
-  margin-top: auto;
-}
-
 .connected-panel,
 .saved-panel {
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -121,6 +117,10 @@ button {
   padding: 14px;
   display: grid;
   gap: 12px;
+}
+
+.saved-panel {
+  margin-top: auto;
 }
 
 .panel-label,
@@ -137,6 +137,17 @@ button {
 
 .connected-panel .panel-label {
   color: #aebbb6;
+}
+
+.workspace-card strong,
+.workspace-card span {
+  display: block;
+}
+
+.workspace-card span {
+  margin-top: 4px;
+  color: #aebbb6;
+  font-size: 12px;
 }
 
 .saved-heading {
@@ -315,7 +326,7 @@ h2 {
 
 .status-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  grid-template-columns: repeat(5, minmax(130px, 1fr));
   gap: 1px;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -351,7 +362,8 @@ section {
 }
 
 .brief-panel,
-.timeline-panel {
+.timeline-panel,
+.approval-panel {
   grid-column: 1;
 }
 
@@ -362,6 +374,7 @@ section {
 
 .launch-panel,
 .performance-panel,
+.team-panel,
 .export-panel {
   grid-column: 3;
 }
@@ -487,7 +500,9 @@ input[type="range"] {
 
 .recommendation-list,
 .property-cards,
-.creative-grid {
+.creative-grid,
+.team-list,
+.approval-flow {
   display: grid;
   gap: 10px;
 }
@@ -526,6 +541,62 @@ input[type="range"] {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 12px;
+}
+
+.team-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #edf2ef;
+  color: var(--green);
+  font-weight: 900;
+}
+
+.team-card span,
+.approval-step span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.approval-step {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.approval-step::before {
+  content: "";
+  width: 11px;
+  height: 11px;
+  margin-top: 4px;
+  border-radius: 50%;
+  border: 2px solid #b9c5c0;
+}
+
+.approval-step.done::before {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.approval-step.current::before {
+  background: #fff0d8;
+  border-color: var(--amber);
 }
 
 .property-title {
@@ -716,10 +787,12 @@ input[type="range"] {
 
   .brief-panel,
   .timeline-panel,
+  .approval-panel,
   .plan-panel,
   .creative-panel,
   .launch-panel,
   .performance-panel,
+  .team-panel,
   .export-panel {
     grid-column: auto;
   }

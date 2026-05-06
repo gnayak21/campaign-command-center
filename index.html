@@ -41,6 +41,14 @@
         </nav>
 
         <div class="connected-panel">
+          <span class="panel-label">Workspace</span>
+          <div class="workspace-card">
+            <strong id="workspaceName">Aster & Co.</strong>
+            <span id="workspaceMeta">Client workspace · 5 members</span>
+          </div>
+        </div>
+
+        <div class="connected-panel">
           <span class="panel-label">Connected Properties</span>
           <div class="property-row"><span class="dot google"></span>Google Ads <strong>Ready</strong></div>
           <div class="property-row"><span class="dot tiktok"></span>TikTok Ads <strong>Review</strong></div>
@@ -88,6 +96,10 @@
             <span>Primary KPI</span>
             <strong id="kpiReadout">ROAS 3.8x</strong>
           </div>
+          <div>
+            <span>Status</span>
+            <strong id="statusReadout">Draft</strong>
+          </div>
         </section>
 
         <div class="command-grid">
@@ -124,6 +136,22 @@
 
             <label class="field-label" for="audience">Audience</label>
             <input id="audience" value="Urban millennials, premium skincare buyers" />
+
+            <div class="split-fields">
+              <div>
+                <label class="field-label" for="campaignOwner">Owner</label>
+                <select id="campaignOwner"></select>
+              </div>
+              <div>
+                <label class="field-label" for="campaignStatus">Status</label>
+                <select id="campaignStatus">
+                  <option>Draft</option>
+                  <option>Review</option>
+                  <option>Approved</option>
+                  <option>Launched</option>
+                </select>
+              </div>
+            </div>
 
             <label class="field-label" for="budget">Total Budget</label>
             <input id="budget" type="range" min="40000" max="400000" step="5000" value="185000" />
@@ -206,6 +234,18 @@
             <div class="property-cards" id="propertyCards"></div>
           </section>
 
+          <section class="team-panel" aria-labelledby="teamTitle">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Workspace</p>
+                <h2 id="teamTitle">Team Access</h2>
+              </div>
+              <span class="badge" id="roleBadge">Owner</span>
+            </div>
+
+            <div class="team-list" id="teamList" aria-label="Workspace team"></div>
+          </section>
+
           <section class="creative-panel" aria-labelledby="creativeTitle">
             <div class="section-heading">
               <div>
@@ -235,6 +275,21 @@
               <li><span></span><div><strong>Stakeholder approval</strong><small>CMO and growth lead</small></div></li>
               <li><span></span><div><strong>Launch monitor</strong><small>First 24-hour pacing check</small></div></li>
             </ol>
+          </section>
+
+          <section class="approval-panel" aria-labelledby="approvalTitle">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Review</p>
+                <h2 id="approvalTitle">Approval Lane</h2>
+              </div>
+              <button class="secondary-button" id="approveButton">Approve</button>
+            </div>
+
+            <div class="approval-flow" id="approvalFlow" aria-label="Approval progress"></div>
+
+            <label class="field-label" for="reviewNotes">Reviewer Notes</label>
+            <textarea id="reviewNotes" rows="4">Creative team should tighten TikTok claims before final media upload.</textarea>
           </section>
 
           <section class="performance-panel" aria-labelledby="performanceTitle">

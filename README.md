@@ -8,6 +8,10 @@ The app is designed as a campaign workspace where a brand team can move from cam
 
 - Campaign brief inputs for campaign name, brand, product, objective, audience, budget, flight dates, landing page, region, tone, constraints, and active channels
 - Saved campaign drafts using browser local storage
+- One-workspace collaboration model for a single brand or client
+- Team roster with owner, editor, reviewer, and viewer roles
+- Campaign owner and status tracking from Draft through Launched
+- Approval lane and reviewer notes saved with each campaign
 - Live budget allocation across Google, TikTok, Snap, and Meta
 - AI-style channel strategy recommendations
 - Property readiness cards for launch preparation
@@ -24,6 +28,8 @@ This is a static HTML, CSS, and JavaScript app. No install or server is required
 Open `index.html` in a browser.
 
 Campaign drafts are saved in the browser where the app is opened. They are not synced to a server.
+
+The current collaboration model is a front-end prototype. Workspace, team, role, approval, and reviewer note data are stored locally in the browser with each saved campaign draft.
 
 ## Project Files
 
@@ -50,7 +56,8 @@ A fuller version of this product could add:
 
 - User accounts and team workspaces
 - Server-backed campaign briefs
-- Approval workflows and comments
+- Multi-workspace support for agencies managing multiple clients
+- Real approval workflows, comments, and notifications
 - Real ad platform API integrations
 - AI-generated copy and creative concepts
 - Campaign performance syncing and optimization recommendations

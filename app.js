@@ -1,4 +1,19 @@
 const storageKey = "campaign-command-center:drafts";
+const workspace = {
+  name: "Aster & Co.",
+  type: "Client workspace",
+  currentRole: "Owner"
+};
+
+const teamMembers = [
+  { id: "maya", name: "Maya Chen", role: "Owner", focus: "Growth lead" },
+  { id: "jonah", name: "Jonah Patel", role: "Editor", focus: "Media buyer" },
+  { id: "sofia", name: "Sofia Rivera", role: "Reviewer", focus: "Creative director" },
+  { id: "liam", name: "Liam Brooks", role: "Reviewer", focus: "Brand manager" },
+  { id: "nora", name: "Nora West", role: "Viewer", focus: "Executive approver" }
+];
+
+const approvalSteps = ["Draft", "Review", "Approved", "Launched"];
 
 const channels = {
   google: {
@@ -88,13 +103,16 @@ const fields = {
   product: document.querySelector("#product"),
   objective: document.querySelector("#objective"),
   audience: document.querySelector("#audience"),
+  campaignOwner: document.querySelector("#campaignOwner"),
+  campaignStatus: document.querySelector("#campaignStatus"),
   budget: document.querySelector("#budget"),
   startDate: document.querySelector("#startDate"),
   endDate: document.querySelector("#endDate"),
   landingPage: document.querySelector("#landingPage"),
   region: document.querySelector("#region"),
   tone: document.querySelector("#tone"),
-  constraints: document.querySelector("#constraints")
+  constraints: document.querySelector("#constraints"),
+  reviewNotes: document.querySelector("#reviewNotes")
 };
 
 const elements = {
@@ -103,6 +121,7 @@ const elements = {
   flightReadout: document.querySelector("#flightReadout"),
   readinessReadout: document.querySelector("#readinessReadout"),
   kpiReadout: document.querySelector("#kpiReadout"),
+  statusReadout: document.querySelector("#statusReadout"),
   fitScore: document.querySelector("#fitScore"),
   budgetMix: document.querySelector("#budgetMix"),
   recommendations: document.querySelector("#recommendations"),
@@ -113,6 +132,11 @@ const elements = {
   reachMetric: document.querySelector("#reachMetric"),
   cpaMetric: document.querySelector("#cpaMetric"),
   liftMetric: document.querySelector("#liftMetric"),
+  workspaceName: document.querySelector("#workspaceName"),
+  workspaceMeta: document.querySelector("#workspaceMeta"),
+  roleBadge: document.querySelector("#roleBadge"),
+  teamList: document.querySelector("#teamList"),
+  approvalFlow: document.querySelector("#approvalFlow"),
   toast: document.querySelector("#toast")
 };
 
@@ -172,6 +196,15 @@ function writeDrafts(drafts) {
   localStorage.setItem(storageKey, JSON.stringify(drafts));
 }
 
+function renderWorkspaceShell() {
+  elements.workspaceName.textContent = workspace.name;
+  elements.workspaceMeta.textContent = `${workspace.type} · ${teamMembers.length} members`;
+  elements.roleBadge.textContent = workspace.currentRole;
+  fields.campaignOwner.innerHTML = teamMembers
+    .map((member) => `<option value="${member.id}">${member.name}</option>`)
+    .join("");
+}
+
 function currentBrief() {
   return {
     id: activeCampaignId,
@@ -181,6 +214,8 @@ function currentBrief() {
     product: fields.product.value.trim() || "Product",
     objective: fields.objective.value,
     audience: fields.audience.value.trim() || "the selected audience",
+    campaignOwner: fields.campaignOwner.value || teamMembers[0].id,
+    campaignStatus: fields.campaignStatus.value,
     budget: Number(fields.budget.value),
     startDate: fields.startDate.value,
     endDate: fields.endDate.value,
@@ -188,6 +223,7 @@ function currentBrief() {
     region: fields.region.value,
     tone: fields.tone.value,
     constraints: fields.constraints.value.trim() || "No constraints provided.",
+    reviewNotes: fields.reviewNotes.value.trim() || "No reviewer notes yet.",
     channels: selectedChannels()
   };
 }
@@ -199,6 +235,8 @@ function applyBrief(brief) {
   fields.product.value = brief.product;
   fields.objective.value = brief.objective;
   fields.audience.value = brief.audience;
+  fields.campaignOwner.value = brief.campaignOwner || teamMembers[0].id;
+  fields.campaignStatus.value = brief.campaignStatus || "Draft";
   fields.budget.value = brief.budget;
   fields.startDate.value = brief.startDate;
   fields.endDate.value = brief.endDate;
@@ -206,6 +244,7 @@ function applyBrief(brief) {
   fields.region.value = brief.region;
   fields.tone.value = brief.tone;
   fields.constraints.value = brief.constraints;
+  fields.reviewNotes.value = brief.reviewNotes || "";
   setSelectedChannels(brief.channels.length ? brief.channels : ["google"]);
   render();
 }
@@ -343,15 +382,66 @@ function renderSavedCampaigns() {
       </button>`;
 }
 
+function renderTeamList() {
+  const brief = currentBrief();
+  elements.teamList.innerHTML = teamMembers
+    .map((member) => {
+      const isOwner = member.id === brief.campaignOwner;
+      const initials = member.name
+        .split(" ")
+        .map((part) => part[0])
+        .join("");
+      return `
+        <article class="team-card">
+          <div class="avatar">${escapeHtml(initials)}</div>
+          <div>
+            <strong>${escapeHtml(member.name)}</strong>
+            <span>${escapeHtml(member.focus)}</span>
+          </div>
+          <span class="badge">${isOwner ? "Owner" : member.role}</span>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function renderApprovalFlow(status) {
+  const currentIndex = approvalSteps.indexOf(status);
+  elements.approvalFlow.innerHTML = approvalSteps
+    .map((step, index) => {
+      const className = index < currentIndex ? "done" : index === currentIndex ? "current" : "";
+      const helper =
+        step === "Draft"
+          ? "Brief and plan are being prepared"
+          : step === "Review"
+            ? "Creative, media, and brand checks"
+            : step === "Approved"
+              ? "Ready for platform upload"
+              : "Live campaign monitoring";
+      return `
+        <article class="approval-step ${className}">
+          <div>
+            <strong>${step}</strong>
+            <span>${helper}</span>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
 function buildLaunchPackage(brief, plan) {
   const active = brief.channels.length ? brief.channels : ["google"];
   const lines = [
     `# ${brief.campaignName}`,
     "",
+    `Workspace: ${workspace.name}`,
     `Brand: ${brief.brand}`,
     `Product: ${brief.product}`,
     `Objective: ${plan.profile.label}`,
     `Audience: ${brief.audience}`,
+    `Owner: ${teamMembers.find((member) => member.id === brief.campaignOwner)?.name || "Unassigned"}`,
+    `Status: ${brief.campaignStatus}`,
     `Region: ${brief.region}`,
     `Flight: ${dateLabel(brief.startDate)} - ${dateLabel(brief.endDate)}`,
     `Budget: ${fullMoney(brief.budget)}`,
@@ -371,6 +461,9 @@ function buildLaunchPackage(brief, plan) {
     "",
     "## Brand Constraints",
     `- ${brief.constraints}`,
+    "",
+    "## Reviewer Notes",
+    `- ${brief.reviewNotes}`,
     "",
     "## Launch Checklist",
     "- Confirm audience exclusions and retargeting pools",
@@ -393,6 +486,7 @@ function render() {
   elements.flightReadout.textContent = `${dateLabel(brief.startDate)} - ${dateLabel(brief.endDate)}`;
   elements.readinessReadout.textContent = `${plan.readiness}%`;
   elements.kpiReadout.textContent = plan.profile.kpi;
+  elements.statusReadout.textContent = brief.campaignStatus;
   elements.fitScore.textContent = plan.profile.fit;
   elements.reachMetric.textContent = plan.profile.reach;
   elements.cpaMetric.textContent = plan.profile.cpa;
@@ -402,6 +496,8 @@ function render() {
   renderRecommendations(plan.recommendations);
   renderPropertyCards(active);
   renderCreative(active, brief);
+  renderTeamList();
+  renderApprovalFlow(brief.campaignStatus);
   elements.launchPackage.value = buildLaunchPackage(brief, plan);
   renderSavedCampaigns();
 }
@@ -424,6 +520,8 @@ function startNewCampaign() {
     product: "",
     objective: "launch",
     audience: "",
+    campaignOwner: teamMembers[0].id,
+    campaignStatus: "Draft",
     budget: 100000,
     startDate: "2026-06-01",
     endDate: "2026-07-15",
@@ -431,6 +529,7 @@ function startNewCampaign() {
     region: "United States",
     tone: "Confident",
     constraints: "",
+    reviewNotes: "",
     channels: ["google", "tiktok", "meta"]
   });
   showToast("New campaign brief ready.");
@@ -475,6 +574,13 @@ document.querySelector("#saveDraftButton").addEventListener("click", saveDraft);
 document.querySelector("#newCampaignButton").addEventListener("click", startNewCampaign);
 document.querySelector("#copyPackageButton").addEventListener("click", copyPackage);
 document.querySelector("#exportButton").addEventListener("click", exportPackage);
+document.querySelector("#approveButton").addEventListener("click", () => {
+  const currentIndex = approvalSteps.indexOf(fields.campaignStatus.value);
+  fields.campaignStatus.value = approvalSteps[Math.min(currentIndex + 1, approvalSteps.length - 1)];
+  saveDraft();
+  render();
+  showToast(`Campaign moved to ${fields.campaignStatus.value}.`);
+});
 
 document.querySelector("#launchButton").addEventListener("click", () => {
   saveDraft();
@@ -496,4 +602,5 @@ document.querySelectorAll("input, select, textarea").forEach((control) => {
   control.addEventListener("change", render);
 });
 
+renderWorkspaceShell();
 render();
