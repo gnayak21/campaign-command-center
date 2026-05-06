@@ -48,6 +48,20 @@
           </div>
         </div>
 
+        <div class="auth-panel">
+          <span class="panel-label">Account</span>
+          <div class="auth-state" id="authState">Local prototype mode</div>
+          <div class="auth-form" id="authForm">
+            <input id="authEmail" type="email" placeholder="Email" autocomplete="email" />
+            <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" />
+            <div class="auth-actions">
+              <button class="mini-button" id="signInButton">Sign In</button>
+              <button class="mini-button quiet" id="signUpButton">Sign Up</button>
+            </div>
+          </div>
+          <button class="mini-button full-width hidden" id="signOutButton">Sign Out</button>
+        </div>
+
         <div class="connected-panel">
           <span class="panel-label">Connected Properties</span>
           <div class="property-row"><span class="dot google"></span>Google Ads <strong>Ready</strong></div>
@@ -334,6 +348,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>

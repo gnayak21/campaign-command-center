@@ -30,7 +30,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -111,7 +112,8 @@ button {
 }
 
 .connected-panel,
-.saved-panel {
+.saved-panel,
+.auth-panel {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   padding: 14px;
@@ -121,6 +123,35 @@ button {
 
 .saved-panel {
   margin-top: auto;
+}
+
+.auth-panel input {
+  min-height: 34px;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #101a17;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.auth-panel input::placeholder {
+  color: #aebbb6;
+}
+
+.auth-state {
+  color: #e5efeb;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.auth-form {
+  display: grid;
+  gap: 8px;
+}
+
+.auth-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .panel-label,
@@ -166,6 +197,15 @@ button {
   font-size: 12px;
   font-weight: 900;
   padding: 0 10px;
+}
+
+.mini-button.quiet {
+  background: #24332e;
+  color: #e5efeb;
+}
+
+.hidden {
+  display: none !important;
 }
 
 .saved-list {
@@ -777,6 +817,7 @@ input[type="range"] {
   .brand-lockup > div:not(.brand-mark),
   .nav-item span:last-child,
   .connected-panel,
+  .auth-panel,
   .saved-panel {
     display: none;
   }

@@ -1,19 +1,34 @@
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
+
 const storageKey = "campaign-command-center:drafts";
-const workspace = {
+const workspaceStorageKey = "campaign-command-center:workspace";
+const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
+const supabase = await createSupabaseClient();
+
+let session = null;
+let activeCampaignId = "sample-campaign";
+let workspace = {
+  id: "local-workspace",
   name: "Aster & Co.",
   type: "Client workspace",
   currentRole: "Owner"
 };
 
-const teamMembers = [
-  { id: "maya", name: "Maya Chen", role: "Owner", focus: "Growth lead" },
-  { id: "jonah", name: "Jonah Patel", role: "Editor", focus: "Media buyer" },
-  { id: "sofia", name: "Sofia Rivera", role: "Reviewer", focus: "Creative director" },
-  { id: "liam", name: "Liam Brooks", role: "Reviewer", focus: "Brand manager" },
-  { id: "nora", name: "Nora West", role: "Viewer", focus: "Executive approver" }
+let teamMembers = [
+  { id: "maya", name: "Maya Chen", email: "maya@example.com", role: "Owner", focus: "Growth lead" },
+  { id: "jonah", name: "Jonah Patel", email: "jonah@example.com", role: "Editor", focus: "Media buyer" },
+  { id: "sofia", name: "Sofia Rivera", email: "sofia@example.com", role: "Reviewer", focus: "Creative director" },
+  { id: "liam", name: "Liam Brooks", email: "liam@example.com", role: "Reviewer", focus: "Brand manager" },
+  { id: "nora", name: "Nora West", email: "nora@example.com", role: "Viewer", focus: "Executive approver" }
 ];
 
 const approvalSteps = ["Draft", "Review", "Approved", "Launched"];
+
+async function createSupabaseClient() {
+  if (!isSupabaseConfigured) return null;
+  const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+  return createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+}
 
 const channels = {
   google: {
@@ -98,6 +113,8 @@ const objectiveProfiles = {
 };
 
 const fields = {
+  authEmail: document.querySelector("#authEmail"),
+  authPassword: document.querySelector("#authPassword"),
   campaignName: document.querySelector("#campaignName"),
   brand: document.querySelector("#brand"),
   product: document.querySelector("#product"),
@@ -116,6 +133,9 @@ const fields = {
 };
 
 const elements = {
+  authState: document.querySelector("#authState"),
+  authForm: document.querySelector("#authForm"),
+  signOutButton: document.querySelector("#signOutButton"),
   campaignTitle: document.querySelector("#campaignTitle"),
   budgetReadout: document.querySelector("#budgetReadout"),
   flightReadout: document.querySelector("#flightReadout"),
@@ -139,8 +159,6 @@ const elements = {
   approvalFlow: document.querySelector("#approvalFlow"),
   toast: document.querySelector("#toast")
 };
-
-let activeCampaignId = "sample-campaign";
 
 function selectedChannels() {
   return [...document.querySelectorAll("[data-channel]:checked")].map((input) => input.dataset.channel);
@@ -184,25 +202,68 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function readDrafts() {
+function readLocal(key, fallback) {
   try {
-    return JSON.parse(localStorage.getItem(storageKey)) || [];
+    return JSON.parse(localStorage.getItem(key)) || fallback;
   } catch {
-    return [];
+    return fallback;
   }
 }
 
-function writeDrafts(drafts) {
-  localStorage.setItem(storageKey, JSON.stringify(drafts));
+function writeLocal(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
 }
 
-function renderWorkspaceShell() {
-  elements.workspaceName.textContent = workspace.name;
-  elements.workspaceMeta.textContent = `${workspace.type} · ${teamMembers.length} members`;
-  elements.roleBadge.textContent = workspace.currentRole;
-  fields.campaignOwner.innerHTML = teamMembers
-    .map((member) => `<option value="${member.id}">${member.name}</option>`)
-    .join("");
+function dbCampaignToBrief(row) {
+  return {
+    id: row.id,
+    updatedAt: row.updated_at,
+    campaignName: row.campaign_name,
+    brand: row.brand,
+    product: row.product,
+    objective: row.objective,
+    audience: row.audience,
+    campaignOwner: row.campaign_owner || teamMembers[0]?.id,
+    campaignStatus: row.campaign_status,
+    budget: Number(row.budget),
+    startDate: row.start_date || "",
+    endDate: row.end_date || "",
+    landingPage: row.landing_page || "",
+    region: row.region || "United States",
+    tone: row.tone || "Confident",
+    constraints: row.constraints || "",
+    reviewNotes: row.review_notes || "",
+    channels: row.channels || []
+  };
+}
+
+function briefToDbCampaign(brief) {
+  return {
+    id: isUuid(brief.id) ? brief.id : undefined,
+    workspace_id: workspace.id,
+    campaign_name: brief.campaignName,
+    brand: brief.brand,
+    product: brief.product,
+    objective: brief.objective,
+    audience: brief.audience,
+    campaign_owner: brief.campaignOwner,
+    campaign_status: brief.campaignStatus,
+    budget: brief.budget,
+    start_date: brief.startDate || null,
+    end_date: brief.endDate || null,
+    landing_page: brief.landingPage,
+    region: brief.region,
+    tone: brief.tone,
+    constraints: brief.constraints,
+    review_notes: brief.reviewNotes,
+    channels: brief.channels,
+    created_by: session.user.id,
+    updated_at: new Date().toISOString()
+  };
+}
+
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 function currentBrief() {
@@ -249,6 +310,28 @@ function applyBrief(brief) {
   render();
 }
 
+function defaultBrief() {
+  return {
+    id: "sample-campaign",
+    campaignName: "Spring Product Launch",
+    brand: "Aster & Co.",
+    product: "Hydra Glow Serum",
+    objective: "revenue",
+    audience: "Urban millennials, premium skincare buyers",
+    campaignOwner: teamMembers[0].id,
+    campaignStatus: "Draft",
+    budget: 185000,
+    startDate: "2026-05-20",
+    endDate: "2026-06-30",
+    landingPage: "https://aster.example/products/hydra-glow",
+    region: "United States",
+    tone: "Confident",
+    constraints: "Avoid medical claims. Lead with hydration, texture, and visible glow.",
+    reviewNotes: "Creative team should tighten TikTok claims before final media upload.",
+    channels: ["google", "tiktok", "snap", "meta"]
+  };
+}
+
 function normalizeShares(activeKeys) {
   const safeKeys = activeKeys.length ? activeKeys : ["google"];
   const total = safeKeys.reduce((sum, key) => sum + channels[key].share, 0);
@@ -285,13 +368,37 @@ function generatePlan(brief) {
         title: "Audience Strategy",
         body: `Build a prospecting layer for ${brief.audience}, then retarget visitors, engagers, and cart abandoners with tighter offers.`
       },
-      {
-        token: "3",
-        title: "Optimization Logic",
-        body: profile.rec
-      }
+      { token: "3", title: "Optimization Logic", body: profile.rec }
     ]
   };
+}
+
+function renderWorkspaceShell() {
+  elements.workspaceName.textContent = workspace.name;
+  elements.workspaceMeta.textContent = `${workspace.type} · ${teamMembers.length} members`;
+  elements.roleBadge.textContent = workspace.currentRole;
+  fields.campaignOwner.innerHTML = teamMembers
+    .map((member) => `<option value="${member.id}">${escapeHtml(member.name)}</option>`)
+    .join("");
+}
+
+function renderAuthState() {
+  if (!isSupabaseConfigured) {
+    elements.authState.textContent = "Local mode: add Supabase keys to enable real sign-in.";
+    elements.authForm.classList.remove("hidden");
+    elements.signOutButton.classList.add("hidden");
+    return;
+  }
+
+  if (session) {
+    elements.authState.textContent = `Signed in as ${session.user.email}`;
+    elements.authForm.classList.add("hidden");
+    elements.signOutButton.classList.remove("hidden");
+  } else {
+    elements.authState.textContent = "Supabase connected. Sign in to sync campaigns.";
+    elements.authForm.classList.remove("hidden");
+    elements.signOutButton.classList.add("hidden");
+  }
 }
 
 function renderBudgetMix(rows) {
@@ -363,8 +470,7 @@ function renderCreative(active, brief) {
     .join("");
 }
 
-function renderSavedCampaigns() {
-  const drafts = readDrafts();
+function renderSavedCampaigns(drafts = readLocal(storageKey, [])) {
   elements.savedCampaigns.innerHTML = drafts.length
     ? drafts
         .map(
@@ -432,7 +538,8 @@ function renderApprovalFlow(status) {
 
 function buildLaunchPackage(brief, plan) {
   const active = brief.channels.length ? brief.channels : ["google"];
-  const lines = [
+  const owner = teamMembers.find((member) => member.id === brief.campaignOwner)?.name || "Unassigned";
+  return [
     `# ${brief.campaignName}`,
     "",
     `Workspace: ${workspace.name}`,
@@ -440,7 +547,7 @@ function buildLaunchPackage(brief, plan) {
     `Product: ${brief.product}`,
     `Objective: ${plan.profile.label}`,
     `Audience: ${brief.audience}`,
-    `Owner: ${teamMembers.find((member) => member.id === brief.campaignOwner)?.name || "Unassigned"}`,
+    `Owner: ${owner}`,
     `Status: ${brief.campaignStatus}`,
     `Region: ${brief.region}`,
     `Flight: ${dateLabel(brief.startDate)} - ${dateLabel(brief.endDate)}`,
@@ -471,9 +578,7 @@ function buildLaunchPackage(brief, plan) {
     "- Upload approved assets to each platform",
     "- QA landing page, UTMs, and conversion events",
     "- Monitor pacing and CPA/ROAS during first 24 hours"
-  ];
-
-  return lines.join("\n");
+  ].join("\n");
 }
 
 function render() {
@@ -499,35 +604,135 @@ function render() {
   renderTeamList();
   renderApprovalFlow(brief.campaignStatus);
   elements.launchPackage.value = buildLaunchPackage(brief, plan);
-  renderSavedCampaigns();
 }
 
-function saveDraft() {
+async function loadWorkspaceFromSupabase() {
+  const { data: existing, error } = await supabase.from("workspaces").select("*").limit(1).maybeSingle();
+  if (error) throw error;
+
+  if (existing) {
+    workspace = {
+      id: existing.id,
+      name: existing.name,
+      type: existing.workspace_type,
+      currentRole: "Owner"
+    };
+  } else {
+    const { data: created, error: createError } = await supabase
+      .from("workspaces")
+      .insert({
+        name: workspace.name,
+        workspace_type: workspace.type,
+        created_by: session.user.id
+      })
+      .select()
+      .single();
+    if (createError) throw createError;
+    workspace = { id: created.id, name: created.name, type: created.workspace_type, currentRole: "Owner" };
+  }
+
+  await ensureProfileAndMembership();
+  await loadTeamFromSupabase();
+}
+
+async function ensureProfileAndMembership() {
+  await supabase.from("profiles").upsert({
+    id: session.user.id,
+    email: session.user.email,
+    full_name: session.user.email?.split("@")[0] || "User"
+  });
+
+  const selfName = session.user.email?.split("@")[0] || "User";
+  await supabase.from("workspace_members").upsert(
+    {
+      workspace_id: workspace.id,
+      user_id: session.user.id,
+      email: session.user.email,
+      full_name: selfName,
+      role: "Owner",
+      focus: "Workspace owner"
+    },
+    { onConflict: "workspace_id,email" }
+  );
+}
+
+async function loadTeamFromSupabase() {
+  const { data, error } = await supabase
+    .from("workspace_members")
+    .select("*")
+    .eq("workspace_id", workspace.id)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  if (!data.length) return;
+  teamMembers = data.map((member) => ({
+    id: member.email,
+    name: member.full_name,
+    email: member.email,
+    role: member.role,
+    focus: member.focus
+  }));
+  workspace.currentRole = teamMembers.find((member) => member.email === session.user.email)?.role || "Viewer";
+}
+
+async function loadCampaigns() {
+  if (!session || !supabase || !isUuid(workspace.id)) {
+    const drafts = readLocal(storageKey, []);
+    renderSavedCampaigns(drafts);
+    return drafts;
+  }
+
+  const { data, error } = await supabase
+    .from("campaigns")
+    .select("*")
+    .eq("workspace_id", workspace.id)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+
+  const drafts = data.map(dbCampaignToBrief);
+  renderSavedCampaigns(drafts);
+  return drafts;
+}
+
+async function saveDraft() {
   const brief = currentBrief();
-  const drafts = readDrafts();
+
+  if (session && supabase && isUuid(workspace.id)) {
+    const payload = briefToDbCampaign(brief);
+    const { data, error } = await supabase.from("campaigns").upsert(payload).select().single();
+    if (error) {
+      showToast(error.message);
+      return;
+    }
+    const saved = dbCampaignToBrief(data);
+    activeCampaignId = saved.id;
+    applyBrief(saved);
+    await loadCampaigns();
+    showToast("Campaign saved to Supabase.");
+    return;
+  }
+
+  const drafts = readLocal(storageKey, []);
   const nextDrafts = [brief, ...drafts.filter((draft) => draft.id !== brief.id)].slice(0, 8);
-  writeDrafts(nextDrafts);
-  renderSavedCampaigns();
+  writeLocal(storageKey, nextDrafts);
+  renderSavedCampaigns(nextDrafts);
   showToast("Campaign draft saved in this browser.");
 }
 
 function startNewCampaign() {
   activeCampaignId = `campaign-${Date.now()}`;
   applyBrief({
+    ...defaultBrief(),
     id: activeCampaignId,
     campaignName: "Untitled Campaign",
-    brand: "",
+    brand: workspace.name,
     product: "",
     objective: "launch",
     audience: "",
-    campaignOwner: teamMembers[0].id,
     campaignStatus: "Draft",
     budget: 100000,
     startDate: "2026-06-01",
     endDate: "2026-07-15",
     landingPage: "",
-    region: "United States",
-    tone: "Confident",
     constraints: "",
     reviewNotes: "",
     channels: ["google", "tiktok", "meta"]
@@ -559,10 +764,62 @@ function exportPackage() {
   showToast("Markdown launch package exported.");
 }
 
+async function handleSignIn() {
+  if (!supabase) {
+    showToast("Add Supabase credentials first.");
+    return;
+  }
+  const { error } = await supabase.auth.signInWithPassword({
+    email: fields.authEmail.value,
+    password: fields.authPassword.value
+  });
+  if (error) showToast(error.message);
+}
+
+async function handleSignUp() {
+  if (!supabase) {
+    showToast("Add Supabase credentials first.");
+    return;
+  }
+  const { error } = await supabase.auth.signUp({
+    email: fields.authEmail.value,
+    password: fields.authPassword.value
+  });
+  showToast(error ? error.message : "Account created. Check email confirmation settings if sign-in is delayed.");
+}
+
+async function handleSignOut() {
+  await supabase.auth.signOut();
+}
+
 function showToast(message) {
   elements.toast.textContent = message;
   elements.toast.classList.add("show");
-  window.setTimeout(() => elements.toast.classList.remove("show"), 2600);
+  window.setTimeout(() => elements.toast.classList.remove("show"), 3000);
+}
+
+async function loadInitialState() {
+  renderAuthState();
+
+  if (!session || !supabase) {
+    const localWorkspace = readLocal(workspaceStorageKey, null);
+    if (localWorkspace) workspace = localWorkspace;
+    renderWorkspaceShell();
+    const drafts = await loadCampaigns();
+    applyBrief(drafts[0] || defaultBrief());
+    return;
+  }
+
+  try {
+    await loadWorkspaceFromSupabase();
+    renderWorkspaceShell();
+    const campaigns = await loadCampaigns();
+    applyBrief(campaigns[0] || defaultBrief());
+  } catch (error) {
+    showToast(error.message);
+    renderWorkspaceShell();
+    applyBrief(defaultBrief());
+  }
 }
 
 document.querySelector("#generateButton").addEventListener("click", () => {
@@ -574,23 +831,28 @@ document.querySelector("#saveDraftButton").addEventListener("click", saveDraft);
 document.querySelector("#newCampaignButton").addEventListener("click", startNewCampaign);
 document.querySelector("#copyPackageButton").addEventListener("click", copyPackage);
 document.querySelector("#exportButton").addEventListener("click", exportPackage);
-document.querySelector("#approveButton").addEventListener("click", () => {
+document.querySelector("#signInButton").addEventListener("click", handleSignIn);
+document.querySelector("#signUpButton").addEventListener("click", handleSignUp);
+document.querySelector("#signOutButton").addEventListener("click", handleSignOut);
+
+document.querySelector("#approveButton").addEventListener("click", async () => {
   const currentIndex = approvalSteps.indexOf(fields.campaignStatus.value);
   fields.campaignStatus.value = approvalSteps[Math.min(currentIndex + 1, approvalSteps.length - 1)];
-  saveDraft();
+  await saveDraft();
   render();
   showToast(`Campaign moved to ${fields.campaignStatus.value}.`);
 });
 
-document.querySelector("#launchButton").addEventListener("click", () => {
-  saveDraft();
+document.querySelector("#launchButton").addEventListener("click", async () => {
+  await saveDraft();
   showToast("Launch review package created and saved.");
 });
 
-elements.savedCampaigns.addEventListener("click", (event) => {
+elements.savedCampaigns.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-load-campaign]");
   if (!button) return;
-  const draft = readDrafts().find((item) => item.id === button.dataset.loadCampaign);
+  const drafts = await loadCampaigns();
+  const draft = drafts.find((item) => item.id === button.dataset.loadCampaign);
   if (draft) {
     applyBrief(draft);
     showToast("Saved campaign loaded.");
@@ -602,5 +864,13 @@ document.querySelectorAll("input, select, textarea").forEach((control) => {
   control.addEventListener("change", render);
 });
 
-renderWorkspaceShell();
-render();
+if (supabase) {
+  const { data } = await supabase.auth.getSession();
+  session = data.session;
+  supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+    session = nextSession;
+    await loadInitialState();
+  });
+}
+
+await loadInitialState();

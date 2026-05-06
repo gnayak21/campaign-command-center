@@ -12,6 +12,7 @@ The app is designed as a campaign workspace where a brand team can move from cam
 - Team roster with owner, editor, reviewer, and viewer roles
 - Campaign owner and status tracking from Draft through Launched
 - Approval lane and reviewer notes saved with each campaign
+- Supabase-ready authentication and database persistence
 - Live budget allocation across Google, TikTok, Snap, and Meta
 - AI-style channel strategy recommendations
 - Property readiness cards for launch preparation
@@ -29,13 +30,31 @@ Open `index.html` in a browser.
 
 Campaign drafts are saved in the browser where the app is opened. They are not synced to a server.
 
-The current collaboration model is a front-end prototype. Workspace, team, role, approval, and reviewer note data are stored locally in the browser with each saved campaign draft.
+After Supabase is configured, signed-in users can save campaigns to the database. Without Supabase keys, the app remains in local prototype mode.
+
+## Supabase Setup
+
+1. Create a Supabase project.
+2. Open the Supabase SQL editor.
+3. Run the SQL in `database/schema.sql`.
+4. In Supabase, enable Email authentication.
+5. Copy your project URL and publishable anon key.
+6. Add them to `supabase-config.js`:
+
+```js
+export const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+export const SUPABASE_PUBLISHABLE_KEY = "YOUR-PUBLISHABLE-ANON-KEY";
+```
+
+The anon key is intended for browser apps when row-level security policies are enabled.
 
 ## Project Files
 
 - `index.html` contains the app structure and interface content
 - `styles.css` contains the layout, responsive design, and visual styling
 - `app.js` contains the interactive campaign planning logic
+- `supabase-config.js` contains the public Supabase browser configuration
+- `database/schema.sql` contains the database tables and row-level security policies
 
 ## GitHub Pages
 
@@ -54,8 +73,6 @@ GitHub will generate a public URL for the app after the deployment finishes.
 
 A fuller version of this product could add:
 
-- User accounts and team workspaces
-- Server-backed campaign briefs
 - Multi-workspace support for agencies managing multiple clients
 - Real approval workflows, comments, and notifications
 - Real ad platform API integrations
