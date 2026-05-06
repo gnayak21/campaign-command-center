@@ -47,17 +47,26 @@
           <div class="property-row"><span class="dot snap"></span>Snap Ads <strong>Ready</strong></div>
           <div class="property-row"><span class="dot meta"></span>Meta Ads <strong>Draft</strong></div>
         </div>
+
+        <div class="saved-panel">
+          <div class="saved-heading">
+            <span class="panel-label">Saved Campaigns</span>
+            <button class="mini-button" id="newCampaignButton">New</button>
+          </div>
+          <div class="saved-list" id="savedCampaigns" aria-label="Saved campaigns"></div>
+        </div>
       </aside>
 
       <main class="workspace">
         <header class="topbar">
           <div>
             <p class="eyebrow">Campaign Command Center</p>
-            <h1>Spring Product Launch</h1>
+            <h1 id="campaignTitle">Spring Product Launch</h1>
           </div>
           <div class="topbar-actions">
             <button class="icon-button" title="Notifications" aria-label="Notifications">○</button>
-            <button class="secondary-button">Save Draft</button>
+            <button class="secondary-button" id="saveDraftButton">Save Draft</button>
+            <button class="secondary-button" id="exportButton">Export Plan</button>
             <button class="primary-button" id="launchButton">Launch Review</button>
           </div>
         </header>
@@ -69,7 +78,7 @@
           </div>
           <div>
             <span>Flight</span>
-            <strong>May 20 - Jun 30</strong>
+            <strong id="flightReadout">May 20 - Jun 30</strong>
           </div>
           <div>
             <span>Launch Readiness</span>
@@ -91,6 +100,20 @@
               <button class="icon-button" title="Import brief" aria-label="Import brief">⇪</button>
             </div>
 
+            <label class="field-label" for="campaignName">Campaign Name</label>
+            <input id="campaignName" value="Spring Product Launch" />
+
+            <div class="split-fields">
+              <div>
+                <label class="field-label" for="brand">Brand</label>
+                <input id="brand" value="Aster & Co." />
+              </div>
+              <div>
+                <label class="field-label" for="product">Product</label>
+                <input id="product" value="Hydra Glow Serum" />
+              </div>
+            </div>
+
             <label class="field-label" for="objective">Objective</label>
             <select id="objective">
               <option value="revenue">Revenue Growth</option>
@@ -104,6 +127,20 @@
 
             <label class="field-label" for="budget">Total Budget</label>
             <input id="budget" type="range" min="40000" max="400000" step="5000" value="185000" />
+
+            <div class="split-fields">
+              <div>
+                <label class="field-label" for="startDate">Start</label>
+                <input id="startDate" type="date" value="2026-05-20" />
+              </div>
+              <div>
+                <label class="field-label" for="endDate">End</label>
+                <input id="endDate" type="date" value="2026-06-30" />
+              </div>
+            </div>
+
+            <label class="field-label" for="landingPage">Landing Page</label>
+            <input id="landingPage" value="https://aster.example/products/hydra-glow" />
 
             <div class="split-fields">
               <div>
@@ -125,6 +162,9 @@
                 </select>
               </div>
             </div>
+
+            <label class="field-label" for="constraints">Brand Constraints</label>
+            <textarea id="constraints" rows="3">Avoid medical claims. Lead with hydration, texture, and visible glow.</textarea>
 
             <fieldset class="channel-toggles">
               <legend>Active Channels</legend>
@@ -221,6 +261,18 @@
               <span style="height: 76%"></span>
               <span style="height: 88%"></span>
             </div>
+          </section>
+
+          <section class="export-panel" aria-labelledby="exportTitle">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">07 Package</p>
+                <h2 id="exportTitle">Launch Package</h2>
+              </div>
+              <button class="secondary-button" id="copyPackageButton">Copy</button>
+            </div>
+
+            <textarea id="launchPackage" rows="14" readonly aria-label="Generated launch package"></textarea>
           </section>
         </div>
       </main>

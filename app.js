@@ -1,48 +1,51 @@
+const storageKey = "campaign-command-center:drafts";
+
 const channels = {
   google: {
     name: "Google",
     color: "#315f9f",
-    token: "G",
     share: 38,
     status: "Ready",
     note: "Search, Performance Max, and YouTube bumper structure prepared.",
     creative: "High-intent search copy with product benefit clustering.",
+    exportLine: "Search headlines, Performance Max asset groups, and YouTube bumper scripts.",
     visual: "linear-gradient(135deg, #315f9f, #9fc4ff)"
   },
   tiktok: {
     name: "TikTok",
     color: "#151515",
-    token: "T",
     share: 26,
     status: "Review",
     note: "Creator-style hooks queued for policy and brand voice review.",
     creative: "First-three-second hooks with problem, demo, proof sequencing.",
+    exportLine: "Creator-style short-form concepts, Spark Ads copy, and hook testing matrix.",
     visual: "linear-gradient(135deg, #111111, #ea4c89)"
   },
   snap: {
     name: "Snap",
     color: "#d7a500",
-    token: "S",
     share: 16,
     status: "Ready",
     note: "AR lens concept and vertical story ads mapped to launch audience.",
     creative: "Fast vertical story frames with offer-forward overlays.",
+    exportLine: "Vertical story frames, AR lens prompt, and quick offer overlays.",
     visual: "linear-gradient(135deg, #ffd83b, #ff9f1c)"
   },
   meta: {
     name: "Meta",
     color: "#0f8a9d",
-    token: "M",
     share: 20,
     status: "Draft",
     note: "Advantage+ audience and retargeting pools need final exclusions.",
     creative: "Feed and reels variants tuned for social proof and bundles.",
+    exportLine: "Reels concepts, feed copy variants, retargeting exclusions, and social proof angles.",
     visual: "linear-gradient(135deg, #0f8a9d, #7edfd6)"
   }
 };
 
 const objectiveProfiles = {
   revenue: {
+    label: "Revenue Growth",
     fit: 94,
     kpi: "ROAS 3.8x",
     rec: "Prioritize high-intent demand capture, then use TikTok and Meta to scale warm audiences with creative proof points.",
@@ -51,6 +54,7 @@ const objectiveProfiles = {
     lift: "18%"
   },
   awareness: {
+    label: "Brand Awareness",
     fit: 89,
     kpi: "Reach 11.2M",
     rec: "Shift spend into video-first inventory and optimize for completed views before moving engaged users into retargeting.",
@@ -59,6 +63,7 @@ const objectiveProfiles = {
     lift: "24%"
   },
   retention: {
+    label: "Customer Retention",
     fit: 87,
     kpi: "LTV +14%",
     rec: "Focus on existing customer segments, refreshed bundles, and channel sequencing that avoids over-frequency.",
@@ -67,6 +72,7 @@ const objectiveProfiles = {
     lift: "14%"
   },
   launch: {
+    label: "New Product Launch",
     fit: 92,
     kpi: "Trial 42k",
     rec: "Open with broad launch storytelling, then split the second wave by use case and purchase intent.",
@@ -76,21 +82,50 @@ const objectiveProfiles = {
   }
 };
 
-const budgetInput = document.querySelector("#budget");
-const budgetReadout = document.querySelector("#budgetReadout");
-const readinessReadout = document.querySelector("#readinessReadout");
-const kpiReadout = document.querySelector("#kpiReadout");
-const objectiveInput = document.querySelector("#objective");
-const audienceInput = document.querySelector("#audience");
-const fitScore = document.querySelector("#fitScore");
-const budgetMix = document.querySelector("#budgetMix");
-const recommendations = document.querySelector("#recommendations");
-const propertyCards = document.querySelector("#propertyCards");
-const creativeGrid = document.querySelector("#creativeGrid");
-const toast = document.querySelector("#toast");
+const fields = {
+  campaignName: document.querySelector("#campaignName"),
+  brand: document.querySelector("#brand"),
+  product: document.querySelector("#product"),
+  objective: document.querySelector("#objective"),
+  audience: document.querySelector("#audience"),
+  budget: document.querySelector("#budget"),
+  startDate: document.querySelector("#startDate"),
+  endDate: document.querySelector("#endDate"),
+  landingPage: document.querySelector("#landingPage"),
+  region: document.querySelector("#region"),
+  tone: document.querySelector("#tone"),
+  constraints: document.querySelector("#constraints")
+};
+
+const elements = {
+  campaignTitle: document.querySelector("#campaignTitle"),
+  budgetReadout: document.querySelector("#budgetReadout"),
+  flightReadout: document.querySelector("#flightReadout"),
+  readinessReadout: document.querySelector("#readinessReadout"),
+  kpiReadout: document.querySelector("#kpiReadout"),
+  fitScore: document.querySelector("#fitScore"),
+  budgetMix: document.querySelector("#budgetMix"),
+  recommendations: document.querySelector("#recommendations"),
+  propertyCards: document.querySelector("#propertyCards"),
+  creativeGrid: document.querySelector("#creativeGrid"),
+  savedCampaigns: document.querySelector("#savedCampaigns"),
+  launchPackage: document.querySelector("#launchPackage"),
+  reachMetric: document.querySelector("#reachMetric"),
+  cpaMetric: document.querySelector("#cpaMetric"),
+  liftMetric: document.querySelector("#liftMetric"),
+  toast: document.querySelector("#toast")
+};
+
+let activeCampaignId = "sample-campaign";
 
 function selectedChannels() {
   return [...document.querySelectorAll("[data-channel]:checked")].map((input) => input.dataset.channel);
+}
+
+function setSelectedChannels(keys) {
+  document.querySelectorAll("[data-channel]").forEach((input) => {
+    input.checked = keys.includes(input.dataset.channel);
+  });
 }
 
 function money(value) {
@@ -102,18 +137,126 @@ function money(value) {
   }).format(value);
 }
 
+function fullMoney(value) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  }).format(value);
+}
+
+function dateLabel(value) {
+  if (!value) return "TBD";
+  const date = new Date(`${value}T12:00:00`);
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function readDrafts() {
+  try {
+    return JSON.parse(localStorage.getItem(storageKey)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function writeDrafts(drafts) {
+  localStorage.setItem(storageKey, JSON.stringify(drafts));
+}
+
+function currentBrief() {
+  return {
+    id: activeCampaignId,
+    updatedAt: new Date().toISOString(),
+    campaignName: fields.campaignName.value.trim() || "Untitled Campaign",
+    brand: fields.brand.value.trim() || "Brand",
+    product: fields.product.value.trim() || "Product",
+    objective: fields.objective.value,
+    audience: fields.audience.value.trim() || "the selected audience",
+    budget: Number(fields.budget.value),
+    startDate: fields.startDate.value,
+    endDate: fields.endDate.value,
+    landingPage: fields.landingPage.value.trim() || "TBD",
+    region: fields.region.value,
+    tone: fields.tone.value,
+    constraints: fields.constraints.value.trim() || "No constraints provided.",
+    channels: selectedChannels()
+  };
+}
+
+function applyBrief(brief) {
+  activeCampaignId = brief.id;
+  fields.campaignName.value = brief.campaignName;
+  fields.brand.value = brief.brand;
+  fields.product.value = brief.product;
+  fields.objective.value = brief.objective;
+  fields.audience.value = brief.audience;
+  fields.budget.value = brief.budget;
+  fields.startDate.value = brief.startDate;
+  fields.endDate.value = brief.endDate;
+  fields.landingPage.value = brief.landingPage;
+  fields.region.value = brief.region;
+  fields.tone.value = brief.tone;
+  fields.constraints.value = brief.constraints;
+  setSelectedChannels(brief.channels.length ? brief.channels : ["google"]);
+  render();
+}
+
 function normalizeShares(activeKeys) {
-  const total = activeKeys.reduce((sum, key) => sum + channels[key].share, 0);
-  return activeKeys.map((key) => ({
+  const safeKeys = activeKeys.length ? activeKeys : ["google"];
+  const total = safeKeys.reduce((sum, key) => sum + channels[key].share, 0);
+  return safeKeys.map((key) => ({
     ...channels[key],
     key,
     normalized: Math.round((channels[key].share / total) * 100)
   }));
 }
 
-function renderBudgetMix(active) {
+function generatePlan(brief) {
+  const active = brief.channels.length ? brief.channels : ["google"];
+  const profile = objectiveProfiles[brief.objective];
   const rows = normalizeShares(active);
-  budgetMix.innerHTML = rows
+  const readiness = Math.min(96, 58 + active.length * 6 + Math.round(brief.budget / 20000));
+
+  return {
+    profile,
+    rows,
+    readiness,
+    allocation: rows.map((item) => ({
+      name: item.name,
+      percent: item.normalized,
+      spend: Math.round((brief.budget * item.normalized) / 100)
+    })),
+    recommendations: [
+      {
+        token: "1",
+        title: "Recommended Allocation",
+        body: `${rows.map((item) => `${item.name} ${money((brief.budget * item.normalized) / 100)}`).join(" · ")}.`
+      },
+      {
+        token: "2",
+        title: "Audience Strategy",
+        body: `Build a prospecting layer for ${brief.audience}, then retarget visitors, engagers, and cart abandoners with tighter offers.`
+      },
+      {
+        token: "3",
+        title: "Optimization Logic",
+        body: profile.rec
+      }
+    ]
+  };
+}
+
+function renderBudgetMix(rows) {
+  elements.budgetMix.innerHTML = rows
     .map(
       (channel) => `
         <div class="mix-row">
@@ -128,34 +271,15 @@ function renderBudgetMix(active) {
     .join("");
 }
 
-function renderRecommendations(active, profile) {
-  const audience = audienceInput.value.trim() || "the selected audience";
-  const rows = normalizeShares(active);
-  const spend = Number(budgetInput.value);
-  recommendations.innerHTML = [
-    {
-      token: "1",
-      title: "Recommended Allocation",
-      body: `${rows.map((item) => `${item.name} ${money((spend * item.normalized) / 100)}`).join(" · ")}.`
-    },
-    {
-      token: "2",
-      title: "Audience Strategy",
-      body: `Build a prospecting layer for ${audience}, then retarget visitors, engagers, and cart abandoners with tighter offers.`
-    },
-    {
-      token: "3",
-      title: "Optimization Logic",
-      body: profile.rec
-    }
-  ]
+function renderRecommendations(items) {
+  elements.recommendations.innerHTML = items
     .map(
       (item) => `
         <article class="recommendation">
           <div class="token">${item.token}</div>
           <div>
-            <strong>${item.title}</strong>
-            <p>${item.body}</p>
+            <strong>${escapeHtml(item.title)}</strong>
+            <p>${escapeHtml(item.body)}</p>
           </div>
         </article>
       `
@@ -164,7 +288,7 @@ function renderRecommendations(active, profile) {
 }
 
 function renderPropertyCards(active) {
-  propertyCards.innerHTML = active
+  elements.propertyCards.innerHTML = active
     .map((key) => {
       const channel = channels[key];
       return `
@@ -180,8 +304,8 @@ function renderPropertyCards(active) {
     .join("");
 }
 
-function renderCreative(active) {
-  creativeGrid.innerHTML = active
+function renderCreative(active, brief) {
+  elements.creativeGrid.innerHTML = active
     .map((key) => {
       const channel = channels[key];
       return `
@@ -192,7 +316,7 @@ function renderCreative(active) {
           </div>
           <div class="creative-card-body">
             <strong>${channel.name} Variant</strong>
-            <p>${channel.creative}</p>
+            <p>${escapeHtml(brief.tone)} concept for ${escapeHtml(brief.product)}: ${channel.creative}</p>
           </div>
         </article>
       `;
@@ -200,29 +324,146 @@ function renderCreative(active) {
     .join("");
 }
 
+function renderSavedCampaigns() {
+  const drafts = readDrafts();
+  elements.savedCampaigns.innerHTML = drafts.length
+    ? drafts
+        .map(
+          (draft) => `
+            <button class="saved-item ${draft.id === activeCampaignId ? "active" : ""}" data-load-campaign="${draft.id}">
+              <strong>${escapeHtml(draft.campaignName)}</strong>
+              <span>${escapeHtml(draft.brand)} · ${money(draft.budget)}</span>
+            </button>
+          `
+        )
+        .join("")
+    : `<button class="saved-item active" data-load-campaign="sample-campaign">
+        <strong>Spring Product Launch</strong>
+        <span>Aster & Co. · ${money(185000)}</span>
+      </button>`;
+}
+
+function buildLaunchPackage(brief, plan) {
+  const active = brief.channels.length ? brief.channels : ["google"];
+  const lines = [
+    `# ${brief.campaignName}`,
+    "",
+    `Brand: ${brief.brand}`,
+    `Product: ${brief.product}`,
+    `Objective: ${plan.profile.label}`,
+    `Audience: ${brief.audience}`,
+    `Region: ${brief.region}`,
+    `Flight: ${dateLabel(brief.startDate)} - ${dateLabel(brief.endDate)}`,
+    `Budget: ${fullMoney(brief.budget)}`,
+    `Landing Page: ${brief.landingPage}`,
+    `Tone: ${brief.tone}`,
+    "",
+    "## Channel Allocation",
+    ...plan.allocation.map((item) => `- ${item.name}: ${item.percent}% (${fullMoney(item.spend)})`),
+    "",
+    "## Strategy",
+    `- ${plan.profile.rec}`,
+    `- Primary KPI: ${plan.profile.kpi}`,
+    `- Launch readiness: ${plan.readiness}%`,
+    "",
+    "## Creative Work Orders",
+    ...active.map((key) => `- ${channels[key].name}: ${channels[key].exportLine}`),
+    "",
+    "## Brand Constraints",
+    `- ${brief.constraints}`,
+    "",
+    "## Launch Checklist",
+    "- Confirm audience exclusions and retargeting pools",
+    "- Send creative variants through brand and policy review",
+    "- Upload approved assets to each platform",
+    "- QA landing page, UTMs, and conversion events",
+    "- Monitor pacing and CPA/ROAS during first 24 hours"
+  ];
+
+  return lines.join("\n");
+}
+
 function render() {
-  const active = selectedChannels();
-  const profile = objectiveProfiles[objectiveInput.value];
-  const readiness = Math.min(96, 58 + active.length * 6 + Math.round(Number(budgetInput.value) / 20000));
+  const brief = currentBrief();
+  const active = brief.channels.length ? brief.channels : ["google"];
+  const plan = generatePlan(brief);
 
-  budgetReadout.textContent = money(Number(budgetInput.value));
-  readinessReadout.textContent = `${readiness}%`;
-  kpiReadout.textContent = profile.kpi;
-  fitScore.textContent = profile.fit;
-  document.querySelector("#reachMetric").textContent = profile.reach;
-  document.querySelector("#cpaMetric").textContent = profile.cpa;
-  document.querySelector("#liftMetric").textContent = profile.lift;
+  elements.campaignTitle.textContent = brief.campaignName;
+  elements.budgetReadout.textContent = money(brief.budget);
+  elements.flightReadout.textContent = `${dateLabel(brief.startDate)} - ${dateLabel(brief.endDate)}`;
+  elements.readinessReadout.textContent = `${plan.readiness}%`;
+  elements.kpiReadout.textContent = plan.profile.kpi;
+  elements.fitScore.textContent = plan.profile.fit;
+  elements.reachMetric.textContent = plan.profile.reach;
+  elements.cpaMetric.textContent = plan.profile.cpa;
+  elements.liftMetric.textContent = plan.profile.lift;
 
-  renderBudgetMix(active);
-  renderRecommendations(active, profile);
+  renderBudgetMix(plan.rows);
+  renderRecommendations(plan.recommendations);
   renderPropertyCards(active);
-  renderCreative(active);
+  renderCreative(active, brief);
+  elements.launchPackage.value = buildLaunchPackage(brief, plan);
+  renderSavedCampaigns();
+}
+
+function saveDraft() {
+  const brief = currentBrief();
+  const drafts = readDrafts();
+  const nextDrafts = [brief, ...drafts.filter((draft) => draft.id !== brief.id)].slice(0, 8);
+  writeDrafts(nextDrafts);
+  renderSavedCampaigns();
+  showToast("Campaign draft saved in this browser.");
+}
+
+function startNewCampaign() {
+  activeCampaignId = `campaign-${Date.now()}`;
+  applyBrief({
+    id: activeCampaignId,
+    campaignName: "Untitled Campaign",
+    brand: "",
+    product: "",
+    objective: "launch",
+    audience: "",
+    budget: 100000,
+    startDate: "2026-06-01",
+    endDate: "2026-07-15",
+    landingPage: "",
+    region: "United States",
+    tone: "Confident",
+    constraints: "",
+    channels: ["google", "tiktok", "meta"]
+  });
+  showToast("New campaign brief ready.");
+}
+
+async function copyPackage() {
+  try {
+    await navigator.clipboard.writeText(elements.launchPackage.value);
+    showToast("Launch package copied to clipboard.");
+  } catch {
+    elements.launchPackage.select();
+    document.execCommand("copy");
+    showToast("Launch package selected and copied.");
+  }
+}
+
+function exportPackage() {
+  const brief = currentBrief();
+  const slug = brief.campaignName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const blob = new Blob([elements.launchPackage.value], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${slug || "campaign"}-launch-package.md`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast("Markdown launch package exported.");
 }
 
 function showToast(message) {
-  toast.textContent = message;
-  toast.classList.add("show");
-  window.setTimeout(() => toast.classList.remove("show"), 2600);
+  elements.toast.textContent = message;
+  elements.toast.classList.add("show");
+  window.setTimeout(() => elements.toast.classList.remove("show"), 2600);
 }
 
 document.querySelector("#generateButton").addEventListener("click", () => {
@@ -230,11 +471,27 @@ document.querySelector("#generateButton").addEventListener("click", () => {
   showToast("Campaign plan regenerated from the latest brief inputs.");
 });
 
+document.querySelector("#saveDraftButton").addEventListener("click", saveDraft);
+document.querySelector("#newCampaignButton").addEventListener("click", startNewCampaign);
+document.querySelector("#copyPackageButton").addEventListener("click", copyPackage);
+document.querySelector("#exportButton").addEventListener("click", exportPackage);
+
 document.querySelector("#launchButton").addEventListener("click", () => {
-  showToast("Launch review package created for media, creative, and brand approval.");
+  saveDraft();
+  showToast("Launch review package created and saved.");
 });
 
-document.querySelectorAll("input, select").forEach((control) => {
+elements.savedCampaigns.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-load-campaign]");
+  if (!button) return;
+  const draft = readDrafts().find((item) => item.id === button.dataset.loadCampaign);
+  if (draft) {
+    applyBrief(draft);
+    showToast("Saved campaign loaded.");
+  }
+});
+
+document.querySelectorAll("input, select, textarea").forEach((control) => {
   control.addEventListener("input", render);
   control.addEventListener("change", render);
 });

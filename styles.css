@@ -112,6 +112,10 @@ button {
 
 .connected-panel {
   margin-top: auto;
+}
+
+.connected-panel,
+.saved-panel {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   padding: 14px;
@@ -133,6 +137,54 @@ button {
 
 .connected-panel .panel-label {
   color: #aebbb6;
+}
+
+.saved-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mini-button {
+  min-height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: #e7f26d;
+  color: #17231f;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 0 10px;
+}
+
+.saved-list {
+  display: grid;
+  gap: 8px;
+}
+
+.saved-item {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: transparent;
+  color: #e5efeb;
+  padding: 10px;
+  text-align: left;
+}
+
+.saved-item.active,
+.saved-item:hover {
+  background: #24332e;
+}
+
+.saved-item strong,
+.saved-item span {
+  display: block;
+}
+
+.saved-item span {
+  margin-top: 3px;
+  color: #aebbb6;
+  font-size: 12px;
 }
 
 .property-row {
@@ -309,7 +361,8 @@ section {
 }
 
 .launch-panel,
-.performance-panel {
+.performance-panel,
+.export-panel {
   grid-column: 3;
 }
 
@@ -325,7 +378,8 @@ section {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 40px;
   border: 1px solid var(--line);
@@ -333,6 +387,13 @@ select {
   background: #f9fbfa;
   color: var(--ink);
   padding: 0 11px;
+}
+
+textarea {
+  min-height: 92px;
+  padding: 10px 11px;
+  resize: vertical;
+  line-height: 1.45;
 }
 
 input[type="range"] {
@@ -607,6 +668,13 @@ input[type="range"] {
   background: linear-gradient(180deg, var(--green), var(--cyan));
 }
 
+.export-panel textarea {
+  min-height: 300px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  white-space: pre;
+}
+
 .toast {
   position: fixed;
   right: 20px;
@@ -637,7 +705,8 @@ input[type="range"] {
 
   .brand-lockup > div:not(.brand-mark),
   .nav-item span:last-child,
-  .connected-panel {
+  .connected-panel,
+  .saved-panel {
     display: none;
   }
 
@@ -650,7 +719,8 @@ input[type="range"] {
   .plan-panel,
   .creative-panel,
   .launch-panel,
-  .performance-panel {
+  .performance-panel,
+  .export-panel {
     grid-column: auto;
   }
 }
