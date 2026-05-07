@@ -288,6 +288,15 @@ button {
   min-width: 0;
 }
 
+body:not(.workspace-open) .workspace {
+  visibility: hidden;
+}
+
+body:not(.workspace-open) .nav-item.active {
+  background: transparent;
+  color: #cbd8d3;
+}
+
 .topbar,
 .section-heading,
 .status-strip,

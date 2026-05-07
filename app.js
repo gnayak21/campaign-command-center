@@ -850,6 +850,7 @@ async function handleSignUp() {
 async function handleSignOut() {
   if (!supabase) {
     session = null;
+    closeWorkspace();
     renderAuthState();
     await loadInitialState();
     return;
@@ -860,6 +861,7 @@ async function handleSignOut() {
     if (error) showToast(error.message);
   } finally {
     session = null;
+    closeWorkspace();
     renderAuthState();
     await loadInitialState();
   }
@@ -1040,6 +1042,19 @@ function showToast(message) {
   window.setTimeout(() => elements.toast.classList.remove("show"), 3000);
 }
 
+function openWorkspace(targetSection = "commandTop") {
+  document.body.classList.add("workspace-open");
+  document.body.classList.toggle("team-view", targetSection === "teamSection");
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    item.classList.toggle("active", item.dataset.targetSection === targetSection);
+  });
+}
+
+function closeWorkspace() {
+  document.body.classList.remove("workspace-open", "team-view");
+  document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
+}
+
 async function loadInitialState() {
   renderAuthState();
 
@@ -1123,11 +1138,9 @@ elements.teamList.addEventListener("click", async (event) => {
 
 document.querySelectorAll("[data-target-section]").forEach((button) => {
   button.addEventListener("click", () => {
-    document.body.classList.toggle("team-view", button.dataset.targetSection === "teamSection");
+    openWorkspace(button.dataset.targetSection);
     const target = document.querySelector(`#${button.dataset.targetSection}`);
     if (!target) return;
-    document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
-    button.classList.add("active");
     target.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 });
@@ -1140,9 +1153,15 @@ document.querySelectorAll("input, select, textarea").forEach((control) => {
 if (supabase) {
   const { data } = await supabase.auth.getSession();
   session = data.session;
+  if (session) openWorkspace();
   supabase.auth.onAuthStateChange(async (_event, nextSession) => {
     session = nextSession;
     await loadInitialState();
+    if (session) {
+      openWorkspace();
+    } else {
+      closeWorkspace();
+    }
   });
 }
 
