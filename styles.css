@@ -297,6 +297,14 @@ body:not(.workspace-open) .nav-item.active {
   color: #cbd8d3;
 }
 
+body:not(.home-view) .campaign-home {
+  display: none;
+}
+
+body.home-view .campaign-editor {
+  display: none;
+}
+
 .topbar,
 .section-heading,
 .status-strip,
@@ -408,6 +416,73 @@ h2 {
   grid-template-columns: minmax(260px, 0.9fr) minmax(360px, 1.35fr) minmax(300px, 1fr);
   gap: 16px;
   align-items: start;
+}
+
+.campaign-home {
+  max-width: 1120px;
+}
+
+.home-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.filter-button {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--muted);
+  font-weight: 850;
+  padding: 0 12px;
+}
+
+.filter-button.active,
+.filter-button:hover {
+  background: var(--green-soft);
+  color: var(--green);
+  border-color: #b8d8cd;
+}
+
+.campaign-list {
+  display: grid;
+  gap: 10px;
+}
+
+.campaign-row {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(4, minmax(105px, 0.65fr)) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.campaign-row strong,
+.campaign-row span {
+  display: block;
+}
+
+.campaign-row span {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.empty-state {
+  border: 1px dashed #b9c5c0;
+  border-radius: 8px;
+  background: #fbfcfb;
+  padding: 22px;
+}
+
+.empty-state p {
+  color: var(--muted);
+  margin-top: 6px;
 }
 
 section {
@@ -937,6 +1012,7 @@ input[type="range"] {
 
   .status-strip,
   .command-grid,
+  .campaign-row,
   .creative-grid,
   .metric-grid,
   .split-fields {

@@ -84,6 +84,27 @@
       </aside>
 
       <main class="workspace" id="commandTop">
+        <section class="campaign-home" id="campaignHome" aria-labelledby="campaignHomeTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Workspace Home</p>
+              <h2 id="campaignHomeTitle">Campaigns</h2>
+            </div>
+            <button class="primary-button" id="homeNewCampaignButton">New Campaign</button>
+          </div>
+
+          <div class="home-filters" aria-label="Campaign filters">
+            <button class="filter-button active" data-campaign-filter="All">All</button>
+            <button class="filter-button" data-campaign-filter="Draft">Draft</button>
+            <button class="filter-button" data-campaign-filter="Review">Review</button>
+            <button class="filter-button" data-campaign-filter="Approved">Approved</button>
+            <button class="filter-button" data-campaign-filter="Launched">Launched</button>
+          </div>
+
+          <div class="campaign-list" id="campaignHomeList" aria-label="Workspace campaigns"></div>
+        </section>
+
+        <div class="campaign-editor" id="campaignEditor">
         <header class="topbar">
           <div>
             <p class="eyebrow">Campaign Command Center</p>
@@ -395,6 +416,7 @@
 
             <textarea id="launchPackage" rows="14" readonly aria-label="Generated launch package"></textarea>
           </section>
+        </div>
         </div>
       </main>
     </div>

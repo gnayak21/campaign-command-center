@@ -7,6 +7,7 @@ The app is designed as a campaign workspace where a brand team can move from cam
 ## Features
 
 - Campaign brief inputs for campaign name, brand, product, objective, audience, budget, flight dates, landing page, region, tone, constraints, and active channels
+- Campaign Home dashboard with saved campaign list, filters, and open/create actions
 - Saved campaign drafts using browser local storage
 - One-workspace collaboration model for a single brand or client
 - Team roster with owner, editor, reviewer, and viewer roles

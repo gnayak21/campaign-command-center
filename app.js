@@ -8,6 +8,8 @@ const supabase = await createSupabaseClient();
 
 let session = null;
 let activeCampaignId = "sample-campaign";
+let campaignCache = [];
+let activeCampaignFilter = "All";
 let workspace = {
   id: "local-workspace",
   name: "Aster & Co.",
@@ -156,6 +158,7 @@ const elements = {
   propertyCards: document.querySelector("#propertyCards"),
   creativeGrid: document.querySelector("#creativeGrid"),
   savedCampaigns: document.querySelector("#savedCampaigns"),
+  campaignHomeList: document.querySelector("#campaignHomeList"),
   launchPackage: document.querySelector("#launchPackage"),
   reachMetric: document.querySelector("#reachMetric"),
   cpaMetric: document.querySelector("#cpaMetric"),
@@ -502,6 +505,7 @@ function renderCreative(active, brief) {
 }
 
 function renderSavedCampaigns(drafts = readLocal(storageKey, [])) {
+  campaignCache = drafts;
   elements.savedCampaigns.innerHTML = drafts.length
     ? drafts
         .map(
@@ -517,6 +521,50 @@ function renderSavedCampaigns(drafts = readLocal(storageKey, [])) {
         <strong>Spring Product Launch</strong>
         <span>Aster & Co. · ${money(185000)}</span>
       </button>`;
+  renderCampaignHome();
+}
+
+function renderCampaignHome() {
+  const visibleCampaigns =
+    activeCampaignFilter === "All"
+      ? campaignCache
+      : campaignCache.filter((campaign) => campaign.campaignStatus === activeCampaignFilter);
+
+  elements.campaignHomeList.innerHTML = visibleCampaigns.length
+    ? visibleCampaigns.map(renderCampaignRow).join("")
+    : `<div class="empty-state">
+        <strong>No campaigns ${activeCampaignFilter === "All" ? "yet" : `in ${activeCampaignFilter}`}</strong>
+        <p>Create a new campaign or change the filter to see other statuses.</p>
+      </div>`;
+}
+
+function renderCampaignRow(campaign) {
+  const owner = teamMembers.find((member) => member.id === campaign.campaignOwner)?.name || "Unassigned";
+  return `
+    <article class="campaign-row">
+      <div>
+        <strong>${escapeHtml(campaign.campaignName)}</strong>
+        <span>${escapeHtml(campaign.brand)} · ${escapeHtml(campaign.product)}</span>
+      </div>
+      <div>
+        <strong>${escapeHtml(campaign.campaignStatus)}</strong>
+        <span>Status</span>
+      </div>
+      <div>
+        <strong>${escapeHtml(owner)}</strong>
+        <span>Owner</span>
+      </div>
+      <div>
+        <strong>${money(campaign.budget)}</strong>
+        <span>Budget</span>
+      </div>
+      <div>
+        <strong>${dateLabel(campaign.startDate)} - ${dateLabel(campaign.endDate)}</strong>
+        <span>Flight</span>
+      </div>
+      <button class="secondary-button" data-open-campaign="${escapeHtml(campaign.id)}">Open</button>
+    </article>
+  `;
 }
 
 function renderTeamList() {
@@ -796,6 +844,7 @@ function startNewCampaign() {
     reviewNotes: "",
     channels: ["google", "tiktok", "meta"]
   });
+  openWorkspace("briefSection");
   showToast("New campaign brief ready.");
 }
 
@@ -1044,6 +1093,7 @@ function showToast(message) {
 
 function openWorkspace(targetSection = "commandTop") {
   document.body.classList.add("workspace-open");
+  document.body.classList.toggle("home-view", targetSection === "commandTop");
   document.body.classList.toggle("team-view", targetSection === "teamSection");
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.classList.toggle("active", item.dataset.targetSection === targetSection);
@@ -1051,7 +1101,7 @@ function openWorkspace(targetSection = "commandTop") {
 }
 
 function closeWorkspace() {
-  document.body.classList.remove("workspace-open", "team-view");
+  document.body.classList.remove("workspace-open", "team-view", "home-view");
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
 }
 
@@ -1115,8 +1165,30 @@ elements.savedCampaigns.addEventListener("click", async (event) => {
   const draft = drafts.find((item) => item.id === button.dataset.loadCampaign);
   if (draft) {
     applyBrief(draft);
+    openWorkspace("briefSection");
     showToast("Saved campaign loaded.");
   }
+});
+
+elements.campaignHomeList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-open-campaign]");
+  if (!button) return;
+  const draft = campaignCache.find((item) => item.id === button.dataset.openCampaign);
+  if (!draft) return;
+  applyBrief(draft);
+  openWorkspace("briefSection");
+  document.querySelector("#briefSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+document.querySelector("#homeNewCampaignButton").addEventListener("click", startNewCampaign);
+
+document.querySelectorAll("[data-campaign-filter]").forEach((button) => {
+  button.addEventListener("click", () => {
+    activeCampaignFilter = button.dataset.campaignFilter;
+    document.querySelectorAll("[data-campaign-filter]").forEach((item) => item.classList.remove("active"));
+    button.classList.add("active");
+    renderCampaignHome();
+  });
 });
 
 elements.teamList.addEventListener("change", async (event) => {
