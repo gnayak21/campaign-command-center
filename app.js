@@ -1123,6 +1123,7 @@ elements.teamList.addEventListener("click", async (event) => {
 
 document.querySelectorAll("[data-target-section]").forEach((button) => {
   button.addEventListener("click", () => {
+    document.body.classList.toggle("team-view", button.dataset.targetSection === "teamSection");
     const target = document.querySelector(`#${button.dataset.targetSection}`);
     if (!target) return;
     document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));

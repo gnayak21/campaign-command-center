@@ -429,6 +429,11 @@ section {
   grid-column: 3;
 }
 
+body:not(.team-view) .team-panel,
+body:not(.team-view) .profile-panel {
+  display: none;
+}
+
 .section-heading {
   justify-content: space-between;
   gap: 12px;
