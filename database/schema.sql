@@ -7,6 +7,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
   full_name text,
+  focus text,
   created_at timestamptz not null default now()
 );
 
@@ -59,6 +60,35 @@ alter table public.workspaces enable row level security;
 alter table public.workspace_members enable row level security;
 alter table public.campaigns enable row level security;
 
+create or replace function public.is_workspace_member(target_workspace_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.workspace_members wm
+    where wm.workspace_id = target_workspace_id
+    and wm.email = auth.jwt() ->> 'email'
+  );
+$$;
+
+create or replace function public.has_workspace_role(target_workspace_id uuid, allowed_roles text[])
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.workspace_members wm
+    where wm.workspace_id = target_workspace_id
+    and wm.email = auth.jwt() ->> 'email'
+    and wm.role = any(allowed_roles)
+  );
+$$;
+
 create policy "Users can read own profile"
   on public.profiles for select
   using (auth.uid() = id);
@@ -73,13 +103,7 @@ create policy "Users can update own profile"
 
 create policy "Members can read their workspaces"
   on public.workspaces for select
-  using (
-    exists (
-      select 1 from public.workspace_members wm
-      where wm.workspace_id = workspaces.id
-      and wm.email = auth.jwt() ->> 'email'
-    )
-  );
+  using (public.is_workspace_member(id));
 
 create policy "Authenticated users can create workspaces"
   on public.workspaces for insert
@@ -87,24 +111,11 @@ create policy "Authenticated users can create workspaces"
 
 create policy "Owners can update workspaces"
   on public.workspaces for update
-  using (
-    exists (
-      select 1 from public.workspace_members wm
-      where wm.workspace_id = workspaces.id
-      and wm.email = auth.jwt() ->> 'email'
-      and wm.role = 'Owner'
-    )
-  );
+  using (public.has_workspace_role(id, array['Owner']));
 
 create policy "Members can read workspace members"
   on public.workspace_members for select
-  using (
-    exists (
-      select 1 from public.workspace_members wm
-      where wm.workspace_id = workspace_members.workspace_id
-      and wm.email = auth.jwt() ->> 'email'
-    )
-  );
+  using (public.is_workspace_member(workspace_id));
 
 create policy "Workspace creators can add initial members"
   on public.workspace_members for insert
@@ -116,46 +127,29 @@ create policy "Workspace creators can add initial members"
     )
   );
 
+create policy "Owners can add members"
+  on public.workspace_members for insert
+  with check (public.has_workspace_role(workspace_id, array['Owner']));
+
 create policy "Owners can manage members"
   on public.workspace_members for update
-  using (
-    exists (
-      select 1 from public.workspace_members wm
-      where wm.workspace_id = workspace_members.workspace_id
-      and wm.email = auth.jwt() ->> 'email'
-      and wm.role = 'Owner'
-    )
-  );
+  using (public.has_workspace_role(workspace_id, array['Owner']));
+
+create policy "Owners can remove members"
+  on public.workspace_members for delete
+  using (public.has_workspace_role(workspace_id, array['Owner']));
 
 create policy "Members can read campaigns"
   on public.campaigns for select
-  using (
-    exists (
-      select 1 from public.workspace_members wm
-      where wm.workspace_id = campaigns.workspace_id
-      and wm.email = auth.jwt() ->> 'email'
-    )
-  );
+  using (public.is_workspace_member(workspace_id));
 
 create policy "Owners and editors can create campaigns"
   on public.campaigns for insert
   with check (
     auth.uid() = created_by
-    and exists (
-      select 1 from public.workspace_members wm
-      where wm.workspace_id = campaigns.workspace_id
-      and wm.email = auth.jwt() ->> 'email'
-      and wm.role in ('Owner', 'Editor')
-    )
+    and public.has_workspace_role(workspace_id, array['Owner', 'Editor'])
   );
 
 create policy "Owners editors reviewers can update campaigns"
   on public.campaigns for update
-  using (
-    exists (
-      select 1 from public.workspace_members wm
-      where wm.workspace_id = campaigns.workspace_id
-      and wm.email = auth.jwt() ->> 'email'
-      and wm.role in ('Owner', 'Editor', 'Reviewer')
-    )
-  );
+  using (public.has_workspace_role(workspace_id, array['Owner', 'Editor', 'Reviewer']));

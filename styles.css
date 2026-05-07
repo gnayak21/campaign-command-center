@@ -154,6 +154,14 @@ button {
   gap: 8px;
 }
 
+.invite-form {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #fbfcfb;
+}
+
 .panel-label,
 .eyebrow,
 .field-label,
@@ -415,6 +423,7 @@ section {
 .launch-panel,
 .performance-panel,
 .team-panel,
+.profile-panel,
 .export-panel {
   grid-column: 3;
 }
@@ -588,9 +597,30 @@ input[type="range"] {
   border-radius: 8px;
   padding: 12px;
   display: grid;
-  grid-template-columns: 34px 1fr auto;
+  grid-template-columns: 34px 1fr;
   gap: 10px;
-  align-items: center;
+  align-items: start;
+}
+
+.team-card-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.team-card-actions select {
+  min-height: 34px;
+}
+
+.danger-button {
+  min-height: 34px;
+  border: 1px solid #f0c8c8;
+  border-radius: 8px;
+  background: #fff8f8;
+  color: #9c2f2f;
+  font-weight: 800;
+  padding: 0 10px;
 }
 
 .avatar {
@@ -834,6 +864,7 @@ input[type="range"] {
   .launch-panel,
   .performance-panel,
   .team-panel,
+  .profile-panel,
   .export-panel {
     grid-column: auto;
   }

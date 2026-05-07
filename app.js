@@ -2,6 +2,7 @@ import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
 
 const storageKey = "campaign-command-center:drafts";
 const workspaceStorageKey = "campaign-command-center:workspace";
+const teamStorageKey = "campaign-command-center:team";
 const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 const supabase = await createSupabaseClient();
 
@@ -115,6 +116,13 @@ const objectiveProfiles = {
 const fields = {
   authEmail: document.querySelector("#authEmail"),
   authPassword: document.querySelector("#authPassword"),
+  profileName: document.querySelector("#profileName"),
+  profileFocus: document.querySelector("#profileFocus"),
+  profileEmail: document.querySelector("#profileEmail"),
+  inviteName: document.querySelector("#inviteName"),
+  inviteEmail: document.querySelector("#inviteEmail"),
+  inviteRole: document.querySelector("#inviteRole"),
+  inviteFocus: document.querySelector("#inviteFocus"),
   campaignName: document.querySelector("#campaignName"),
   brand: document.querySelector("#brand"),
   product: document.querySelector("#product"),
@@ -155,6 +163,7 @@ const elements = {
   workspaceName: document.querySelector("#workspaceName"),
   workspaceMeta: document.querySelector("#workspaceMeta"),
   roleBadge: document.querySelector("#roleBadge"),
+  inviteForm: document.querySelector("#inviteForm"),
   teamList: document.querySelector("#teamList"),
   approvalFlow: document.querySelector("#approvalFlow"),
   toast: document.querySelector("#toast")
@@ -212,6 +221,19 @@ function readLocal(key, fallback) {
 
 function writeLocal(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function currentUserMember() {
+  if (!session) return teamMembers[0];
+  return teamMembers.find((member) => member.email === session.user.email) || teamMembers[0];
+}
+
+function canManageTeam() {
+  return ["Owner"].includes(workspace.currentRole);
+}
+
+function persistLocalTeam() {
+  writeLocal(teamStorageKey, teamMembers);
 }
 
 function dbCampaignToBrief(row) {
@@ -377,9 +399,18 @@ function renderWorkspaceShell() {
   elements.workspaceName.textContent = workspace.name;
   elements.workspaceMeta.textContent = `${workspace.type} · ${teamMembers.length} members`;
   elements.roleBadge.textContent = workspace.currentRole;
+  elements.inviteForm.classList.toggle("hidden", !canManageTeam());
   fields.campaignOwner.innerHTML = teamMembers
     .map((member) => `<option value="${member.id}">${escapeHtml(member.name)}</option>`)
     .join("");
+  renderProfileSettings();
+}
+
+function renderProfileSettings() {
+  const member = currentUserMember();
+  fields.profileName.value = member?.name || "";
+  fields.profileFocus.value = member?.focus || "";
+  fields.profileEmail.value = session?.user.email || member?.email || "local@prototype";
 }
 
 function renderAuthState() {
@@ -502,9 +533,18 @@ function renderTeamList() {
           <div class="avatar">${escapeHtml(initials)}</div>
           <div>
             <strong>${escapeHtml(member.name)}</strong>
-            <span>${escapeHtml(member.focus)}</span>
+            <span>${escapeHtml(member.focus)} · ${escapeHtml(member.email)}</span>
           </div>
-          <span class="badge">${isOwner ? "Owner" : member.role}</span>
+          <div class="team-card-actions">
+            <select data-member-role="${escapeHtml(member.email)}" ${canManageTeam() ? "" : "disabled"}>
+              ${["Owner", "Editor", "Reviewer", "Viewer"]
+                .map((role) => `<option ${role === member.role ? "selected" : ""}>${role}</option>`)
+                .join("")}
+            </select>
+            <button class="danger-button" data-remove-member="${escapeHtml(member.email)}" ${canManageTeam() && !isOwner ? "" : "disabled"}>
+              Remove
+            </button>
+          </div>
         </article>
       `;
     })
@@ -636,24 +676,37 @@ async function loadWorkspaceFromSupabase() {
 }
 
 async function ensureProfileAndMembership() {
+  const selfName = session.user.email?.split("@")[0] || "User";
   await supabase.from("profiles").upsert({
     id: session.user.id,
     email: session.user.email,
-    full_name: session.user.email?.split("@")[0] || "User"
+    full_name: selfName,
+    focus: "Workspace owner"
   });
 
-  const selfName = session.user.email?.split("@")[0] || "User";
-  await supabase.from("workspace_members").upsert(
-    {
+  const { data: existingMember } = await supabase
+    .from("workspace_members")
+    .select("*")
+    .eq("workspace_id", workspace.id)
+    .eq("email", session.user.email)
+    .maybeSingle();
+
+  if (existingMember) {
+    await supabase
+      .from("workspace_members")
+      .update({ user_id: session.user.id })
+      .eq("workspace_id", workspace.id)
+      .eq("email", session.user.email);
+  } else {
+    await supabase.from("workspace_members").insert({
       workspace_id: workspace.id,
       user_id: session.user.id,
       email: session.user.email,
       full_name: selfName,
       role: "Owner",
       focus: "Workspace owner"
-    },
-    { onConflict: "workspace_id,email" }
-  );
+    });
+  }
 }
 
 async function loadTeamFromSupabase() {
@@ -792,6 +845,153 @@ async function handleSignOut() {
   await supabase.auth.signOut();
 }
 
+async function saveProfile() {
+  const name = fields.profileName.value.trim() || "User";
+  const focus = fields.profileFocus.value.trim() || "Team member";
+  const email = session?.user.email || fields.profileEmail.value || teamMembers[0].email;
+
+  if (session && supabase && isUuid(workspace.id)) {
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ full_name: name, focus })
+      .eq("id", session.user.id);
+    if (profileError) {
+      showToast(profileError.message);
+      return;
+    }
+
+    const { error: memberError } = await supabase
+      .from("workspace_members")
+      .update({ full_name: name, focus })
+      .eq("workspace_id", workspace.id)
+      .eq("email", email);
+    if (memberError) {
+      showToast(memberError.message);
+      return;
+    }
+
+    await loadTeamFromSupabase();
+  } else {
+    teamMembers = teamMembers.map((member, index) =>
+      index === 0 ? { ...member, name, focus, email: email || member.email } : member
+    );
+    persistLocalTeam();
+  }
+
+  renderWorkspaceShell();
+  render();
+  showToast("Profile updated.");
+}
+
+async function inviteTeamMember() {
+  if (!canManageTeam()) {
+    showToast("Only workspace owners can add teammates.");
+    return;
+  }
+
+  const email = fields.inviteEmail.value.trim().toLowerCase();
+  const name = fields.inviteName.value.trim() || email.split("@")[0];
+  const role = fields.inviteRole.value;
+  const focus = fields.inviteFocus.value.trim() || "Team member";
+
+  if (!email || !email.includes("@")) {
+    showToast("Enter a valid teammate email.");
+    return;
+  }
+
+  if (session && supabase && isUuid(workspace.id)) {
+    const { error } = await supabase.from("workspace_members").upsert(
+      {
+        workspace_id: workspace.id,
+        email,
+        full_name: name,
+        role,
+        focus
+      },
+      { onConflict: "workspace_id,email" }
+    );
+    if (error) {
+      showToast(error.message);
+      return;
+    }
+    await loadTeamFromSupabase();
+  } else {
+    teamMembers = [
+      ...teamMembers.filter((member) => member.email !== email),
+      { id: email, email, name, role, focus }
+    ];
+    persistLocalTeam();
+  }
+
+  fields.inviteName.value = "";
+  fields.inviteEmail.value = "";
+  fields.inviteFocus.value = "";
+  renderWorkspaceShell();
+  render();
+  showToast("Teammate added.");
+}
+
+async function updateMemberRole(email, role) {
+  if (!canManageTeam()) {
+    showToast("Only workspace owners can change roles.");
+    return;
+  }
+
+  if (session && supabase && isUuid(workspace.id)) {
+    const { error } = await supabase
+      .from("workspace_members")
+      .update({ role })
+      .eq("workspace_id", workspace.id)
+      .eq("email", email);
+    if (error) {
+      showToast(error.message);
+      return;
+    }
+    await loadTeamFromSupabase();
+  } else {
+    teamMembers = teamMembers.map((member) => (member.email === email ? { ...member, role } : member));
+    persistLocalTeam();
+  }
+
+  renderWorkspaceShell();
+  render();
+  showToast("Role updated.");
+}
+
+async function removeTeamMember(email) {
+  if (!canManageTeam()) {
+    showToast("Only workspace owners can remove teammates.");
+    return;
+  }
+  if (email === session?.user.email) {
+    showToast("You cannot remove yourself.");
+    return;
+  }
+
+  if (session && supabase && isUuid(workspace.id)) {
+    const { error } = await supabase
+      .from("workspace_members")
+      .delete()
+      .eq("workspace_id", workspace.id)
+      .eq("email", email);
+    if (error) {
+      showToast(error.message);
+      return;
+    }
+    await loadTeamFromSupabase();
+  } else {
+    teamMembers = teamMembers.filter((member) => member.email !== email);
+    persistLocalTeam();
+  }
+
+  if (!teamMembers.some((member) => member.id === fields.campaignOwner.value)) {
+    fields.campaignOwner.value = teamMembers[0]?.id || "";
+  }
+  renderWorkspaceShell();
+  render();
+  showToast("Teammate removed.");
+}
+
 function showToast(message) {
   elements.toast.textContent = message;
   elements.toast.classList.add("show");
@@ -804,6 +1004,7 @@ async function loadInitialState() {
   if (!session || !supabase) {
     const localWorkspace = readLocal(workspaceStorageKey, null);
     if (localWorkspace) workspace = localWorkspace;
+    teamMembers = readLocal(teamStorageKey, teamMembers);
     renderWorkspaceShell();
     const drafts = await loadCampaigns();
     applyBrief(drafts[0] || defaultBrief());
@@ -834,6 +1035,8 @@ document.querySelector("#exportButton").addEventListener("click", exportPackage)
 document.querySelector("#signInButton").addEventListener("click", handleSignIn);
 document.querySelector("#signUpButton").addEventListener("click", handleSignUp);
 document.querySelector("#signOutButton").addEventListener("click", handleSignOut);
+document.querySelector("#saveProfileButton").addEventListener("click", saveProfile);
+document.querySelector("#inviteMemberButton").addEventListener("click", inviteTeamMember);
 
 document.querySelector("#approveButton").addEventListener("click", async () => {
   const currentIndex = approvalSteps.indexOf(fields.campaignStatus.value);
@@ -857,6 +1060,18 @@ elements.savedCampaigns.addEventListener("click", async (event) => {
     applyBrief(draft);
     showToast("Saved campaign loaded.");
   }
+});
+
+elements.teamList.addEventListener("change", async (event) => {
+  const select = event.target.closest("[data-member-role]");
+  if (!select) return;
+  await updateMemberRole(select.dataset.memberRole, select.value);
+});
+
+elements.teamList.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-remove-member]");
+  if (!button) return;
+  await removeTeamMember(button.dataset.removeMember);
 });
 
 document.querySelectorAll("input, select, textarea").forEach((control) => {

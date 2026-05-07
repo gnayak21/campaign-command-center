@@ -10,6 +10,8 @@ The app is designed as a campaign workspace where a brand team can move from cam
 - Saved campaign drafts using browser local storage
 - One-workspace collaboration model for a single brand or client
 - Team roster with owner, editor, reviewer, and viewer roles
+- Editable user profile name and focus label
+- Team access editor for adding teammates, changing roles, and removing members
 - Campaign owner and status tracking from Draft through Launched
 - Approval lane and reviewer notes saved with each campaign
 - Supabase-ready authentication and database persistence
@@ -48,6 +50,8 @@ export const SUPABASE_PUBLISHABLE_KEY = "YOUR-PUBLISHABLE-ANON-KEY";
 
 The anon key is intended for browser apps when row-level security policies are enabled.
 
+If you already created the database before profile/team editing was added, run `database/team-settings.sql` once in the Supabase SQL editor.
+
 ## Project Files
 
 - `index.html` contains the app structure and interface content
@@ -55,6 +59,7 @@ The anon key is intended for browser apps when row-level security policies are e
 - `app.js` contains the interactive campaign planning logic
 - `supabase-config.js` contains the public Supabase browser configuration
 - `database/schema.sql` contains the database tables and row-level security policies
+- `database/team-settings.sql` adds the profile/team editor migration for existing Supabase projects
 
 ## GitHub Pages
 

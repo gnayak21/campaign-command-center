@@ -257,7 +257,55 @@
               <span class="badge" id="roleBadge">Owner</span>
             </div>
 
+            <div class="invite-form" id="inviteForm">
+              <div class="split-fields">
+                <div>
+                  <label class="field-label" for="inviteName">Name</label>
+                  <input id="inviteName" placeholder="Taylor Morgan" />
+                </div>
+                <div>
+                  <label class="field-label" for="inviteEmail">Email</label>
+                  <input id="inviteEmail" type="email" placeholder="taylor@brand.com" />
+                </div>
+              </div>
+              <div class="split-fields">
+                <div>
+                  <label class="field-label" for="inviteRole">Role</label>
+                  <select id="inviteRole">
+                    <option>Reviewer</option>
+                    <option>Editor</option>
+                    <option>Viewer</option>
+                    <option>Owner</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label" for="inviteFocus">Focus</label>
+                  <input id="inviteFocus" placeholder="Brand reviewer" />
+                </div>
+              </div>
+              <button class="secondary-button full-width" id="inviteMemberButton">Add Teammate</button>
+            </div>
+
             <div class="team-list" id="teamList" aria-label="Workspace team"></div>
+          </section>
+
+          <section class="profile-panel" aria-labelledby="profileTitle">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Account</p>
+                <h2 id="profileTitle">Profile Settings</h2>
+              </div>
+              <button class="secondary-button" id="saveProfileButton">Save Profile</button>
+            </div>
+
+            <label class="field-label" for="profileName">Name</label>
+            <input id="profileName" placeholder="Your name" />
+
+            <label class="field-label" for="profileFocus">Focus</label>
+            <input id="profileFocus" placeholder="Growth lead" />
+
+            <label class="field-label" for="profileEmail">Email</label>
+            <input id="profileEmail" readonly />
           </section>
 
           <section class="creative-panel" aria-labelledby="creativeTitle">
