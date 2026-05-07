@@ -18,23 +18,27 @@
         </div>
 
         <nav class="nav-stack">
-          <button class="nav-item active" title="Command center" aria-label="Command center">
+          <button class="nav-item active" data-target-section="commandTop" title="Command center" aria-label="Command center">
             <span aria-hidden="true">⌂</span>
             <span>Center</span>
           </button>
-          <button class="nav-item" title="Audiences" aria-label="Audiences">
+          <button class="nav-item" data-target-section="briefSection" title="Audiences" aria-label="Audiences">
             <span aria-hidden="true">◉</span>
             <span>Audiences</span>
           </button>
-          <button class="nav-item" title="Creative library" aria-label="Creative library">
+          <button class="nav-item" data-target-section="teamSection" title="Team access" aria-label="Team access">
+            <span aria-hidden="true">☷</span>
+            <span>Team</span>
+          </button>
+          <button class="nav-item" data-target-section="creativeSection" title="Creative library" aria-label="Creative library">
             <span aria-hidden="true">▧</span>
             <span>Creative</span>
           </button>
-          <button class="nav-item" title="Approvals" aria-label="Approvals">
+          <button class="nav-item" data-target-section="approvalSection" title="Approvals" aria-label="Approvals">
             <span aria-hidden="true">✓</span>
             <span>Approvals</span>
           </button>
-          <button class="nav-item" title="Reporting" aria-label="Reporting">
+          <button class="nav-item" data-target-section="reportingSection" title="Reporting" aria-label="Reporting">
             <span aria-hidden="true">↗</span>
             <span>Reporting</span>
           </button>
@@ -79,7 +83,7 @@
         </div>
       </aside>
 
-      <main class="workspace">
+      <main class="workspace" id="commandTop">
         <header class="topbar">
           <div>
             <p class="eyebrow">Campaign Command Center</p>
@@ -117,7 +121,7 @@
         </section>
 
         <div class="command-grid">
-          <section class="brief-panel" aria-labelledby="briefTitle">
+          <section class="brief-panel" id="briefSection" aria-labelledby="briefTitle">
             <div class="section-heading">
               <div>
                 <p class="eyebrow">01 Brief</p>
@@ -248,7 +252,7 @@
             <div class="property-cards" id="propertyCards"></div>
           </section>
 
-          <section class="team-panel" aria-labelledby="teamTitle">
+          <section class="team-panel" id="teamSection" aria-labelledby="teamTitle">
             <div class="section-heading">
               <div>
                 <p class="eyebrow">Workspace</p>
@@ -308,7 +312,7 @@
             <input id="profileEmail" readonly />
           </section>
 
-          <section class="creative-panel" aria-labelledby="creativeTitle">
+          <section class="creative-panel" id="creativeSection" aria-labelledby="creativeTitle">
             <div class="section-heading">
               <div>
                 <p class="eyebrow">04 Creative</p>
@@ -339,7 +343,7 @@
             </ol>
           </section>
 
-          <section class="approval-panel" aria-labelledby="approvalTitle">
+          <section class="approval-panel" id="approvalSection" aria-labelledby="approvalTitle">
             <div class="section-heading">
               <div>
                 <p class="eyebrow">Review</p>
@@ -354,7 +358,7 @@
             <textarea id="reviewNotes" rows="4">Creative team should tighten TikTok claims before final media upload.</textarea>
           </section>
 
-          <section class="performance-panel" aria-labelledby="performanceTitle">
+          <section class="performance-panel" id="reportingSection" aria-labelledby="performanceTitle">
             <div class="section-heading">
               <div>
                 <p class="eyebrow">06 Forecast</p>

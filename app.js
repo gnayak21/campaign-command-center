@@ -524,6 +524,7 @@ function renderTeamList() {
   elements.teamList.innerHTML = teamMembers
     .map((member) => {
       const isOwner = member.id === brief.campaignOwner;
+      const isSignedInUser = Boolean(session?.user.email && member.email === session.user.email);
       const initials = member.name
         .split(" ")
         .map((part) => part[0])
@@ -541,7 +542,7 @@ function renderTeamList() {
                 .map((role) => `<option ${role === member.role ? "selected" : ""}>${role}</option>`)
                 .join("")}
             </select>
-            <button class="danger-button" data-remove-member="${escapeHtml(member.email)}" ${canManageTeam() && !isOwner ? "" : "disabled"}>
+            <button class="danger-button" data-remove-member="${escapeHtml(member.email)}" ${canManageTeam() && !isSignedInUser ? "" : "disabled"}>
               Remove
             </button>
           </div>
@@ -968,6 +969,8 @@ async function removeTeamMember(email) {
     return;
   }
 
+  const removedMember = teamMembers.find((member) => member.email === email);
+
   if (session && supabase && isUuid(workspace.id)) {
     const { error } = await supabase
       .from("workspace_members")
@@ -984,7 +987,7 @@ async function removeTeamMember(email) {
     persistLocalTeam();
   }
 
-  if (!teamMembers.some((member) => member.id === fields.campaignOwner.value)) {
+  if (removedMember?.id === fields.campaignOwner.value || !teamMembers.some((member) => member.id === fields.campaignOwner.value)) {
     fields.campaignOwner.value = teamMembers[0]?.id || "";
   }
   renderWorkspaceShell();
@@ -1072,6 +1075,16 @@ elements.teamList.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-remove-member]");
   if (!button) return;
   await removeTeamMember(button.dataset.removeMember);
+});
+
+document.querySelectorAll("[data-target-section]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const target = document.querySelector(`#${button.dataset.targetSection}`);
+    if (!target) return;
+    document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
+    button.classList.add("active");
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 });
 
 document.querySelectorAll("input, select, textarea").forEach((control) => {

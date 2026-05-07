@@ -407,6 +407,7 @@ section {
   border-radius: 8px;
   box-shadow: var(--shadow);
   padding: 16px;
+  scroll-margin-top: 18px;
 }
 
 .brief-panel,
