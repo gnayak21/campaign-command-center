@@ -542,7 +542,12 @@ function renderTeamList() {
                 .map((role) => `<option ${role === member.role ? "selected" : ""}>${role}</option>`)
                 .join("")}
             </select>
-            <button class="danger-button" data-remove-member="${escapeHtml(member.email)}" ${canManageTeam() && !isSignedInUser ? "" : "disabled"}>
+            <button
+              class="danger-button"
+              data-remove-member="${escapeHtml(member.email)}"
+              data-remove-member-id="${escapeHtml(member.id)}"
+              ${canManageTeam() && !isSignedInUser ? "" : "disabled"}
+            >
               Remove
             </button>
           </div>
@@ -843,7 +848,21 @@ async function handleSignUp() {
 }
 
 async function handleSignOut() {
-  await supabase.auth.signOut();
+  if (!supabase) {
+    session = null;
+    renderAuthState();
+    await loadInitialState();
+    return;
+  }
+
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) showToast(error.message);
+  } finally {
+    session = null;
+    renderAuthState();
+    await loadInitialState();
+  }
 }
 
 async function saveProfile() {
@@ -959,40 +978,60 @@ async function updateMemberRole(email, role) {
   showToast("Role updated.");
 }
 
-async function removeTeamMember(email) {
-  if (!canManageTeam()) {
-    showToast("Only workspace owners can remove teammates.");
-    return;
-  }
-  if (email === session?.user.email) {
-    showToast("You cannot remove yourself.");
-    return;
-  }
-
-  const removedMember = teamMembers.find((member) => member.email === email);
-
-  if (session && supabase && isUuid(workspace.id)) {
-    const { error } = await supabase
-      .from("workspace_members")
-      .delete()
-      .eq("workspace_id", workspace.id)
-      .eq("email", email);
-    if (error) {
-      showToast(error.message);
+async function removeTeamMember(identifier) {
+  try {
+    if (!canManageTeam()) {
+      showToast("Only workspace owners can remove teammates.");
       return;
     }
-    await loadTeamFromSupabase();
-  } else {
-    teamMembers = teamMembers.filter((member) => member.email !== email);
-    persistLocalTeam();
-  }
 
-  if (removedMember?.id === fields.campaignOwner.value || !teamMembers.some((member) => member.id === fields.campaignOwner.value)) {
-    fields.campaignOwner.value = teamMembers[0]?.id || "";
+    const removedMember = teamMembers.find((member) => member.email === identifier || member.id === identifier);
+    if (!removedMember) {
+      showToast("Could not find that teammate.");
+      return;
+    }
+
+    if (removedMember.email === session?.user.email) {
+      showToast("You cannot remove yourself.");
+      return;
+    }
+
+    const remainingMembers = teamMembers.filter((member) => member.email !== removedMember.email);
+    if (removedMember.id === fields.campaignOwner.value || removedMember.email === fields.campaignOwner.value) {
+      fields.campaignOwner.value = remainingMembers[0]?.id || "";
+    }
+
+    if (session && supabase && isUuid(workspace.id)) {
+      const { data, error } = await supabase
+        .from("workspace_members")
+        .delete()
+        .eq("workspace_id", workspace.id)
+        .eq("email", removedMember.email)
+        .select("email");
+      if (error) {
+        const needsMigration = error.message.toLowerCase().includes("policy") || error.message.toLowerCase().includes("permission");
+        showToast(needsMigration ? "Team removal is blocked by Supabase RLS. Run database/team-settings.sql." : error.message);
+        return;
+      }
+      if (!data.length) {
+        showToast("No matching teammate was removed from Supabase.");
+        return;
+      }
+      await loadTeamFromSupabase();
+    } else {
+      teamMembers = remainingMembers;
+      persistLocalTeam();
+    }
+
+    if (!teamMembers.some((member) => member.id === fields.campaignOwner.value)) {
+      fields.campaignOwner.value = teamMembers[0]?.id || "";
+    }
+    renderWorkspaceShell();
+    render();
+    showToast("Teammate removed.");
+  } catch (error) {
+    showToast(error.message || "Unable to remove teammate.");
   }
-  renderWorkspaceShell();
-  render();
-  showToast("Teammate removed.");
 }
 
 function showToast(message) {
@@ -1074,7 +1113,12 @@ elements.teamList.addEventListener("change", async (event) => {
 elements.teamList.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-remove-member]");
   if (!button) return;
-  await removeTeamMember(button.dataset.removeMember);
+  button.disabled = true;
+  try {
+    await removeTeamMember(button.dataset.removeMember || button.dataset.removeMemberId);
+  } finally {
+    button.disabled = false;
+  }
 });
 
 document.querySelectorAll("[data-target-section]").forEach((button) => {
